@@ -6,22 +6,25 @@ import { launchedFromTelegram, loadTelegram, setupTelegramChrome } from './lib/t
 import { nowMin, todayISO } from './lib/date.js';
 import { habitLogId, isScheduled } from './lib/habits.js';
 import { notify } from './lib/notify.js';
-import DayView from './components/day/DayView.jsx';
-import CalendarView from './components/CalendarView.jsx';
-import HabitsView from './components/HabitsView.jsx';
-import GoalsView from './components/GoalsView.jsx';
+import TodayView from './components/today/TodayView.jsx';
+import PlansView from './components/PlansView.jsx';
+import GrowthView from './components/GrowthView.jsx';
 import MoreView from './components/MoreView.jsx';
+import AddSheet from './components/sheets/AddSheet.jsx';
+import PlanSheet from './components/sheets/PlanSheet.jsx';
+import ReviewSheet from './components/sheets/ReviewSheet.jsx';
+import SearchSheet from './components/sheets/SearchSheet.jsx';
+import Onboarding from './components/Onboarding.jsx';
 import TaskSheet from './components/TaskSheet.jsx';
 import Connect from './components/Connect.jsx';
 import SyncDot from './components/SyncDot.jsx';
 import { fmtClock, leftMs, useTick } from './components/TimersView.jsx';
-import { IconCalendar, IconDay, IconGoal, IconHabit, IconMore, IconTimer } from './components/Icons.jsx';
+import { IconCalendar, IconGrowth, IconMore, IconTimer, IconToday, IconPlus } from './components/Icons.jsx';
 
 const TABS = [
-  ['day', 'День', IconDay],
-  ['calendar', 'Календарь', IconCalendar],
-  ['habits', 'Привычки', IconHabit],
-  ['goals', 'Цели', IconGoal],
+  ['today', 'Сегодня', IconToday],
+  ['plans', 'Планы', IconCalendar],
+  ['growth', 'Рост', IconGrowth],
   ['more', 'Ещё', IconMore],
 ];
 
@@ -140,6 +143,8 @@ export default function App() {
   const view = useStore((s) => s.view);
   const setView = useStore((s) => s.setView);
   const signedIn = useStore((s) => !!s.token || s.localOnly);
+  const onboarded = useStore((s) => s.onboarded);
+  const openSheet = useStore((s) => s.openSheet);
   useTimerAlerts();
   useHabitReminders();
 
@@ -157,6 +162,10 @@ export default function App() {
         e.preventDefault();
         useStore.getState().setMoreView('notes');
       }
+      if ((e.ctrlKey || e.metaKey) && ['k', 'л'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+        useStore.getState().openSheet('search');
+      }
     };
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('keydown', onKey);
@@ -173,35 +182,52 @@ export default function App() {
   if (!ready) return <div className="boot" aria-busy="true" />;
   if (!signedIn) return <Connect error={error} />;
 
+  const tab = (id, label, Icon) => (
+    <li key={id}>
+      <button type="button" className="nav-tab" aria-current={view === id ? 'page' : undefined} onClick={() => setView(id)}>
+        <Icon />
+        <span>{label}</span>
+      </button>
+    </li>
+  );
+  const addBtn = (
+    <li className="nav-add-wrap">
+      <button type="button" className="nav-add" onClick={() => openSheet('add', 'task')} aria-label="Добавить">
+        <IconPlus width={26} height={26} />
+        <span>Добавить</span>
+      </button>
+    </li>
+  );
+
   return (
     <div className="app">
-      <nav className="nav" aria-label="Разделы">
+      <div className="backdrop" aria-hidden="true" />
+      <nav className="nav glass-strong" aria-label="Разделы">
         <div className="brand" aria-hidden="true">
           <span />
           <span />
           <span />
         </div>
         <ul className="nav-tabs">
-          {TABS.map(([id, label, Icon]) => (
-            <li key={id}>
-              <button type="button" className="nav-tab" aria-current={view === id ? 'page' : undefined} onClick={() => setView(id)}>
-                <Icon />
-                <span>{label}</span>
-              </button>
-            </li>
-          ))}
+          {TABS.slice(0, 2).map(([id, l, I]) => tab(id, l, I))}
+          {addBtn}
+          {TABS.slice(2).map(([id, l, I]) => tab(id, l, I))}
         </ul>
         <SyncDot />
       </nav>
       <main className="content">
         <TimerPill />
-        {view === 'day' && <DayView />}
-        {view === 'calendar' && <CalendarView />}
-        {view === 'habits' && <HabitsView />}
-        {view === 'goals' && <GoalsView />}
+        {view === 'today' && <TodayView />}
+        {view === 'plans' && <PlansView />}
+        {view === 'growth' && <GrowthView />}
         {view === 'more' && <MoreView />}
       </main>
       <TaskSheet />
+      <AddSheet />
+      <PlanSheet />
+      <ReviewSheet />
+      <SearchSheet />
+      {!onboarded && <Onboarding />}
       <Toast />
     </div>
   );

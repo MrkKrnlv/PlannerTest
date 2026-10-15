@@ -34,7 +34,7 @@ function Nav({ title, sub, onPrev, onNext, onToday, showToday }) {
   );
 }
 
-function WeekView({ all, settings, areas }) {
+export function WeekView({ all, settings, areas }) {
   const date = useStore((s) => s.date);
   const { setDate, setView, openTask } = useStore.getState();
   const days = weekDays(date);
@@ -95,7 +95,7 @@ function WeekView({ all, settings, areas }) {
                 className="wday-head"
                 onClick={() => {
                   setDate(d);
-                  setView('day');
+                  setView('today');
                 }}
               >
                 <span className="wday-name">{weekdayShort(d)}</span>
@@ -131,7 +131,7 @@ function WeekView({ all, settings, areas }) {
   );
 }
 
-function MonthView({ all, settings }) {
+export function MonthView({ all, settings }) {
   const date = useStore((s) => s.date);
   const { setDate, setView } = useStore.getState();
   const today = todayISO();
@@ -176,7 +176,7 @@ function MonthView({ all, settings }) {
                   data-today={d === today || undefined}
                   onClick={() => {
                     setDate(d);
-                    setView('day');
+                    setView('today');
                   }}
                   aria-label={`${dayMonth(d)}: задач ${list.length}, сделано ${done}, очков ${byDay[d] || 0}`}
                 >
@@ -221,30 +221,5 @@ function MonthView({ all, settings }) {
         </section>
       </div>
     </>
-  );
-}
-
-export default function CalendarView() {
-  const mode = useStore((s) => s.calMode);
-  const setCalMode = useStore((s) => s.setCalMode);
-  const tasksMap = useStore((s) => s.tasks);
-  const items = useStore((s) => s.items);
-  const all = useMemo(() => liveTasks(tasksMap), [tasksMap]);
-  const areas = useMemo(() => liveItems(items, 'area'), [items]);
-  const settings = settingsOf(items);
-
-  return (
-    <div className="page calendar">
-      <Segmented
-        label="Вид календаря"
-        value={mode}
-        onChange={setCalMode}
-        options={[
-          ['week', 'Неделя'],
-          ['month', 'Месяц'],
-        ]}
-      />
-      {mode === 'week' ? <WeekView all={all} settings={settings} areas={areas} /> : <MonthView all={all} settings={settings} />}
-    </div>
   );
 }

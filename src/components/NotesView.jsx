@@ -57,7 +57,7 @@ export default function NotesView() {
               className="card note"
               onClick={() => {
                 setDate(d.date);
-                setView('day');
+                setView('today');
               }}
             >
               <span className="note-date">

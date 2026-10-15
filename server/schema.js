@@ -29,6 +29,8 @@ const STATEMENTS = [
 const TASK_COLUMNS = {
   deep: 'INTEGER NOT NULL DEFAULT 0', // глубокая работа — идёт в пик энергии
   frog: 'INTEGER NOT NULL DEFAULT 0', // главная задача дня
+  repeat: 'TEXT', // JSON: { freq, days?, series }
+  checklist: 'TEXT', // JSON: [{ id, text, done }]
 };
 
 let ready = null;

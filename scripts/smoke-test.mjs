@@ -134,4 +134,14 @@ await call('POST', '/api/tasks/sync', { token, body: { changes: [{ id: randomUUI
 const deepTask = (await call('GET', '/api/tasks?from=2026-10-20&to=2026-10-20', { token })).data.tasks[0];
 assert.ok(deepTask.deep && deepTask.frog); ok('deep и frog сохраняются');
 
+// 15. Повтор и подзадачи
+const rid = randomUUID();
+await call('POST', '/api/tasks/sync', { token, body: { changes: [{
+  id: rid, title: 'Планёрка', date: '2026-10-21', repeat: { freq: 'weekly', days: [3, 3, 9], series: rid, junk: 1 },
+  checklist: [{ id: 'a', text: 'Повестка', done: true }, { id: 'b', text: '' }], updated_at: Date.now(),
+}] } });
+const rep = (await call('GET', '/api/tasks?since=0', { token })).data.tasks.find((t) => t.id === rid);
+assert.deepEqual(rep.repeat, { freq: 'weekly', days: [3], series: rid });
+assert.deepEqual(rep.checklist, [{ id: 'a', text: 'Повестка', done: true }]); ok('повтор и подзадачи');
+
 console.log('\nВсе проверки пройдены');

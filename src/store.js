@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { todayISO, slotFromTime } from './lib/date.js';
+import { nextOccurrence } from './lib/repeat.js';
 
 export const uuid = () =>
   crypto.randomUUID?.() ??
@@ -38,6 +39,7 @@ export const useStore = create(
       // --- только на этом устройстве
       timers: [],
       lastAutoplan: null, // { date, before: {id: {time, slot}} } для отмены
+      onboarded: false,
 
       // аккаунт
       token: null,
@@ -45,10 +47,12 @@ export const useStore = create(
       localOnly: false,
 
       // интерфейс (не сохраняется)
-      view: 'day',
-      calMode: 'week',
-      goalsMode: 'areas',
+      view: 'today', // today | plans | growth | more
+      plansMode: 'week', // inbox | week | month
+      growthMode: 'habits', // habits | areas | plan
       moreView: null,
+      sheet: null, // add | plan | review | search
+      addKind: 'task',
       date: todayISO(),
       editingId: null,
       toast: null,
@@ -56,8 +60,11 @@ export const useStore = create(
 
       // --- навигация
       setView: (view) => set({ view, moreView: null }),
-      setCalMode: (calMode) => set({ calMode }),
-      setGoalsMode: (goalsMode) => set({ goalsMode }),
+      setPlansMode: (plansMode) => set({ view: 'plans', plansMode, moreView: null }),
+      setGrowthMode: (growthMode) => set({ view: 'growth', growthMode, moreView: null }),
+      openSheet: (sheet, addKind) => set({ sheet, ...(addKind ? { addKind } : {}) }),
+      closeSheet: () => set({ sheet: null }),
+      finishOnboarding: () => set({ onboarded: true }),
       setMoreView: (moreView) => set({ view: 'more', moreView }),
       setDate: (date) => set({ date }),
       openTask: (id) => set({ editingId: id }),
@@ -73,10 +80,11 @@ export const useStore = create(
         const now = Date.now();
         const time = input.time || null;
         const duration = input.duration_min || 30;
+        const id = uuid();
         const task = {
-          id: uuid(),
+          id,
           title: input.title.trim(),
-          date: input.date ?? get().date,
+          date: 'date' in input ? input.date ?? null : get().date,
           time,
           slot: input.slot || slotFromTime(time),
           duration_min: duration,
@@ -85,6 +93,8 @@ export const useStore = create(
           note: input.note || null,
           deep: input.deep ?? duration >= 60,
           frog: !!input.frog,
+          repeat: input.repeat ? { ...input.repeat, series: input.repeat.series || id } : null,
+          checklist: input.checklist?.length ? input.checklist : null,
           done: false,
           deleted: false,
           source: 'app',
@@ -112,7 +122,31 @@ export const useStore = create(
         }
       },
 
-      toggleDone: (id) => get().updateTask(id, { done: !get().tasks[id]?.done }),
+      toggleDone: (id) => {
+        const t = get().tasks[id];
+        if (!t) return;
+        get().updateTask(id, { done: !t.done });
+        // повторяющаяся задача: при выполнении создаём следующую, если её ещё нет
+        if (!t.done && t.repeat && t.date) {
+          const date = nextOccurrence(t.date, t.repeat);
+          const series = t.repeat.series || t.id;
+          const exists = Object.values(get().tasks).some((x) => !x.deleted && x.repeat?.series === series && x.date === date);
+          if (date && !exists) {
+            const { id: _id, created_at: _c, updated_at: _u, done: _d, ...rest } = t;
+            get().addTask({
+              ...rest,
+              date,
+              repeat: { ...t.repeat, series },
+              checklist: t.checklist?.map((c) => ({ ...c, done: false })) || null,
+            });
+          }
+        }
+      },
+      toggleChecklist: (id, itemId) => {
+        const t = get().tasks[id];
+        if (!t?.checklist) return;
+        get().updateTask(id, { checklist: t.checklist.map((c) => (c.id === itemId ? { ...c, done: !c.done } : c)) });
+      },
       deleteTask: (id) => get().updateTask(id, { deleted: true }),
       moveTasks: (ids, date) => ids.forEach((id) => get().updateTask(id, { date, time: null })),
 
@@ -247,12 +281,13 @@ export const useStore = create(
     }),
     {
       name: 'planner-v1',
-      version: 2,
-      migrate: (state) => ({ items: {}, itemsDirty: {}, itemsRev: 0, timers: [], ...state }),
+      version: 3,
+      // кто уже пользовался приложением — онбординг не показываем
+      migrate: (state, v) => ({ items: {}, itemsDirty: {}, itemsRev: 0, timers: [], ...state, onboarded: v < 3 ? !!state.token || !!state.localOnly : !!state.onboarded }),
       partialize: (s) => ({
         tasks: s.tasks, dirty: s.dirty, rev: s.rev,
         items: s.items, itemsDirty: s.itemsDirty, itemsRev: s.itemsRev,
-        timers: s.timers, lastAutoplan: s.lastAutoplan,
+        timers: s.timers, lastAutoplan: s.lastAutoplan, onboarded: s.onboarded,
         token: s.token, user: s.user, localOnly: s.localOnly,
       }),
     }

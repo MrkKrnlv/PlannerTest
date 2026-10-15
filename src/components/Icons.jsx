@@ -27,3 +27,11 @@ export const IconBolt = (p) => <svg {...base} width={14} height={14} {...p}><pat
 export const IconBell = I(<><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 0 0 4 0" /></>);
 export const IconSearch = I(<><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4-4" /></>);
 export const IconTrash = I(<><path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13" /></>);
+export const IconRepeat = (p) => <svg {...base} width={14} height={14} {...p}><path d="M4 11V9a4 4 0 0 1 4-4h11l-3-3M20 13v2a4 4 0 0 1-4 4H5l3 3" /></svg>;
+export const IconList = (p) => <svg {...base} width={14} height={14} {...p}><path d="M9 6h11M9 12h11M9 18h11" /><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg>;
+export const IconInbox = I(<><path d="M3.5 13.5l2.5-8h12l2.5 8v5h-17z" /><path d="M3.5 13.5h5l1 2h5l1-2h5" /></>);
+export const IconSpark = I(<><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" /></>);
+export const IconExport = I(<><path d="M12 3v12M7 8l5-5 5 5" /><path d="M5 14v6h14v-6" /></>);
+export const IconHelp = I(<><circle cx="12" cy="12" r="8.5" /><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.7M12 16.8v.2" /></>);
+export const IconGrowth = I(<><path d="M4 19h16" /><path d="M6 15l4-4 3 3 5-6" /><path d="M15 8h3v3" /></>);
+export const IconToday = I(<><rect x="4" y="4.5" width="16" height="15.5" rx="4" /><path d="M8 3v3M16 3v3M4 9.5h16" /><circle cx="12" cy="14.5" r="2" fill="currentColor" stroke="none" /></>);

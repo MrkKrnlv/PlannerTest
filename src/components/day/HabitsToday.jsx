@@ -6,22 +6,22 @@ import { IconCheck } from '../Icons.jsx';
 
 export default function HabitsToday({ className = '', date }) {
   const items = useStore((s) => s.items);
-  const { toggleLog, setView } = useStore.getState();
+  const { toggleLog, setGrowthMode, openSheet } = useStore.getState();
   const habits = useMemo(
     () => liveItems(items, 'habit').filter((h) => !h.data.archived && isScheduled(h, date)).sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0)),
     [items, date]
   );
 
   return (
-    <section className={`card habits-today ${className}`} aria-label="Привычки на день">
+    <section className={`glass habits-today ${className}`} aria-label="Привычки на день">
       <div className="card-head">
         <h2 className="card-title">Привычки</h2>
-        <button type="button" className="text-btn" onClick={() => setView('habits')}>
-          {habits.length ? 'Все привычки' : 'Добавить'}
+        <button type="button" className="text-btn" onClick={() => (habits.length ? setGrowthMode('habits') : openSheet('add', 'habit'))}>
+          {habits.length ? 'Все' : 'Добавить'}
         </button>
       </div>
       {habits.length === 0 ? (
-        <p className="muted small">На этот день привычек нет.</p>
+        <p className="muted small">Привычек на этот день нет. Добавь одну маленькую через «+».</p>
       ) : (
         <ul className="hchips">
           {habits.map((h) => {

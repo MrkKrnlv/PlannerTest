@@ -19,6 +19,35 @@ export function slotFromTime(time) {
   return 'evening';
 }
 
+const FREQS = new Set(['daily', 'weekdays', 'weekly', 'monthly']);
+
+/** Повтор: { freq, days?: [0..6], series } -> JSON или null */
+function normalizeRepeat(r) {
+  if (!r || typeof r !== 'object' || !FREQS.has(r.freq)) return null;
+  const days = Array.isArray(r.days) ? [...new Set(r.days.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))] : [];
+  const series = typeof r.series === 'string' && ID_RE.test(r.series) ? r.series : null;
+  return JSON.stringify({ freq: r.freq, ...(days.length ? { days } : {}), ...(series ? { series } : {}) });
+}
+
+/** Подзадачи: [{ id, text, done }] -> JSON или null */
+function normalizeChecklist(list) {
+  if (!Array.isArray(list) || !list.length) return null;
+  const items = list
+    .slice(0, 50)
+    .map((c) => ({ id: String(c?.id || '').slice(0, 40), text: str(c?.text, 200), done: !!c?.done }))
+    .filter((c) => c.id && c.text);
+  return items.length ? JSON.stringify(items) : null;
+}
+
+const parseJson = (v) => {
+  if (!v) return null;
+  try {
+    return JSON.parse(v);
+  } catch {
+    return null;
+  }
+};
+
 /** Приводит входящую задачу к схеме БД. Бросает 400 на мусор. */
 export function normalizeTask(raw, { requireId = true } = {}) {
   if (!raw || typeof raw !== 'object') throw new HttpError(400, 'task must be an object');
@@ -44,6 +73,8 @@ export function normalizeTask(raw, { requireId = true } = {}) {
     note: str(raw.note, 2000),
     deep: raw.deep ? 1 : 0,
     frog: raw.frog ? 1 : 0,
+    repeat: normalizeRepeat(raw.repeat),
+    checklist: normalizeChecklist(raw.checklist),
     done: raw.done ? 1 : 0,
     deleted: raw.deleted ? 1 : 0,
     source: ['app', 'voice', 'api'].includes(raw.source) ? raw.source : 'app',
@@ -54,7 +85,7 @@ export function normalizeTask(raw, { requireId = true } = {}) {
 
 const COLS = [
   'id', 'user_id', 'title', 'date', 'slot', 'time', 'duration_min', 'area',
-  'priority', 'note', 'deep', 'frog', 'done', 'deleted', 'source', 'created_at', 'updated_at',
+  'priority', 'note', 'deep', 'frog', 'repeat', 'checklist', 'done', 'deleted', 'source', 'created_at', 'updated_at',
 ];
 const UPDATABLE = COLS.filter((c) => !['id', 'user_id', 'created_at'].includes(c));
 
@@ -85,6 +116,8 @@ export const toClient = (r) => ({
   note: r.note,
   deep: !!r.deep,
   frog: !!r.frog,
+  repeat: parseJson(r.repeat),
+  checklist: parseJson(r.checklist),
   done: !!r.done,
   deleted: !!r.deleted,
   source: r.source,

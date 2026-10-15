@@ -98,8 +98,22 @@ nodes = [
          if_params("={{ $json.message.voice }}", "object", "exists")),
     node("Скачать голосовое", "n8n-nodes-base.telegram", 1.2, [440, 200],
          {"resource": "file", "fileId": "={{ $json.message.voice.file_id }}", "additionalFields": {}}),
-    node("Расшифровать", "@n8n/n8n-nodes-langchain.openAi", 1.8, [660, 200],
-         {"resource": "audio", "operation": "transcribe", "options": {"language": "ru"}}),
+    # Groq Whisper (OpenAI-совместимый API). Бесплатный уровень Groq закрывает личное использование.
+    node("Расшифровать (Groq Whisper)", "n8n-nodes-base.httpRequest", 4.2, [660, 200], {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "sendBody": True,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {"parameters": [
+            {"parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data"},
+            {"name": "model", "value": "whisper-large-v3-turbo"},
+            {"name": "language", "value": "ru"},
+            {"name": "response_format", "value": "json"},
+        ]},
+        "options": {},
+    }, credentials={"groqApi": {"name": "Groq"}}),
     node("Текст", "n8n-nodes-base.set", 3.4, [880, 300], {
         "assignments": {"assignments": [
             {"id": nid(), "name": "text", "type": "string",
@@ -123,10 +137,10 @@ nodes = [
         "hasOutputParser": True,
         "options": {"systemMessage": SYSTEM},
     }),
-    node("OpenAI Chat Model", "@n8n/n8n-nodes-langchain.lmChatOpenAi", 1.2, [1260, 520], {
-        "model": {"__rl": True, "value": "gpt-4.1-mini", "mode": "list", "cachedResultName": "gpt-4.1-mini"},
+    node("Groq Chat Model", "@n8n/n8n-nodes-langchain.lmChatGroq", 1, [1260, 520], {
+        "model": "openai/gpt-oss-120b",
         "options": {"temperature": 0.2},
-    }),
+    }, credentials={"groqApi": {"name": "Groq"}}),
     node("Structured Output Parser", "@n8n/n8n-nodes-langchain.outputParserStructured", 1.3, [1440, 520], {
         "schemaType": "manual",
         "inputSchema": json.dumps(SCHEMA, ensure_ascii=False, indent=2),
@@ -157,14 +171,14 @@ main = lambda *targets: {"main": [[{"node": t, "type": "main", "index": 0} for t
 connections = {
     "Telegram Trigger": main(["Голосовое?"]),
     "Голосовое?": main(["Скачать голосовое"], ["Текст"]),
-    "Скачать голосовое": main(["Расшифровать"]),
-    "Расшифровать": main(["Текст"]),
+    "Скачать голосовое": main(["Расшифровать (Groq Whisper)"]),
+    "Расшифровать (Groq Whisper)": main(["Текст"]),
     "Текст": main(["Задачи на неделю"]),
     "Задачи на неделю": main(["AI Agent"]),
     "AI Agent": main(["Есть задачи?"]),
     "Есть задачи?": main(["Добавить в планер"], ["Ответить в Telegram"]),
     "Добавить в планер": main(["Ответить в Telegram"]),
-    "OpenAI Chat Model": {"ai_languageModel": [[{"node": "AI Agent", "type": "ai_languageModel", "index": 0}]]},
+    "Groq Chat Model": {"ai_languageModel": [[{"node": "AI Agent", "type": "ai_languageModel", "index": 0}]]},
     "Structured Output Parser": {"ai_outputParser": [[{"node": "AI Agent", "type": "ai_outputParser", "index": 0}]]},
 }
 

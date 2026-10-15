@@ -2,18 +2,21 @@ import { useStore } from '../store.js';
 import TimersView from './TimersView.jsx';
 import NotesView from './NotesView.jsx';
 import Settings from './Settings.jsx';
-import { IconLeft, IconNote, IconSettings, IconTimer, IconRight } from './Icons.jsx';
+import ExportView from './ExportView.jsx';
+import { IconLeft, IconNote, IconSettings, IconTimer, IconRight, IconSpark, IconHelp } from './Icons.jsx';
 
 const ENTRIES = [
   ['timers', 'Таймеры', 'Фокус на задаче и параллельные таймеры', IconTimer],
   ['notes', 'Заметки', 'Все заметки и итоги дней с поиском', IconNote],
-  ['settings', 'Настройки', 'Мой день, синхронизация, ключ для браузера', IconSettings],
+  ['export', 'Экспорт для Claude', 'Выгрузить месяц и получить разбор', IconSpark],
+  ['settings', 'Настройки', 'Мои часы, синхронизация, ключ для браузера', IconSettings],
 ];
 
 export default function MoreView() {
   const sub = useStore((s) => s.moreView);
   const setMoreView = useStore((s) => s.setMoreView);
   const timers = useStore((s) => s.timers.length);
+  const user = useStore((s) => s.user);
 
   if (sub) {
     return (
@@ -24,6 +27,7 @@ export default function MoreView() {
         </button>
         {sub === 'timers' && <TimersView />}
         {sub === 'notes' && <NotesView />}
+        {sub === 'export' && <ExportView />}
         {sub === 'settings' && <Settings />}
       </div>
     );
@@ -32,21 +36,38 @@ export default function MoreView() {
   return (
     <div className="page more">
       <header className="page-head">
-        <h1 className="page-title">Ещё</h1>
+        <div>
+          <h1 className="page-title">Ещё</h1>
+          {user?.name && <p className="muted small">{user.name}</p>}
+        </div>
       </header>
-      <ul className="menu">
-        {ENTRIES.map(([id, title, sub, Icon]) => (
+      <ul className="menu glass">
+        {ENTRIES.map(([id, title, subtitle, Icon]) => (
           <li key={id}>
-            <button type="button" className="card menu-item" onClick={() => setMoreView(id)}>
-              <Icon />
+            <button type="button" className="menu-item" onClick={() => setMoreView(id)}>
+              <span className="menu-icon">
+                <Icon />
+              </span>
               <span>
                 <b>{title}</b>
-                <small className="muted">{id === 'timers' && timers ? `Запущено: ${timers}` : sub}</small>
+                <small className="muted">{id === 'timers' && timers ? `Запущено: ${timers}` : subtitle}</small>
               </span>
               <IconRight width={18} height={18} className="muted" />
             </button>
           </li>
         ))}
+        <li>
+          <button type="button" className="menu-item" onClick={() => useStore.setState({ onboarded: false })}>
+            <span className="menu-icon">
+              <IconHelp />
+            </span>
+            <span>
+              <b>Как пользоваться</b>
+              <small className="muted">Короткое знакомство с разделами</small>
+            </span>
+            <IconRight width={18} height={18} className="muted" />
+          </button>
+        </li>
       </ul>
     </div>
   );

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useStore, liveItems } from '../store.js';
-import { addDays, slotFromTime } from '../lib/date.js';
+import { useStore, liveItems, uuid } from '../store.js';
+import { addDays, slotFromTime, todayISO, weekdayIdx, weekdayShortByIdx, WEEKDAYS_MON } from '../lib/date.js';
+import { REPEAT_OPTIONS } from '../lib/repeat.js';
 import { haptic } from '../lib/telegram.js';
 import { Sheet, Dot } from './ui.jsx';
-import { IconBolt, IconFlag, IconTimer } from './Icons.jsx';
+import { IconBolt, IconFlag, IconTimer, IconClose, IconPlus } from './Icons.jsx';
 
 const DURATIONS = [15, 30, 45, 60, 90, 120, 180];
 const SLOTS = [
@@ -24,6 +25,7 @@ export default function TaskSheet() {
   const items = useStore((s) => s.items);
   const { closeTask, updateTask, deleteTask, clearOtherFrogs, startTimer, setMoreView, showToast } = useStore.getState();
   const [form, setForm] = useState(null);
+  const [sub, setSub] = useState('');
 
   useEffect(() => {
     setForm(task ? { ...task } : null);
@@ -40,9 +42,11 @@ export default function TaskSheet() {
     e?.preventDefault();
     if (!form?.title.trim()) return;
     const patch = {};
-    for (const k of ['title', 'date', 'time', 'slot', 'duration_min', 'area', 'priority', 'note', 'deep', 'frog', 'done']) {
-      if (form[k] !== task[k]) patch[k] = form[k];
+    for (const k of ['title', 'date', 'time', 'slot', 'duration_min', 'area', 'priority', 'note', 'deep', 'frog', 'done', 'repeat', 'checklist']) {
+      if (JSON.stringify(form[k] ?? null) !== JSON.stringify(task[k] ?? null)) patch[k] = form[k] ?? null;
     }
+    if (patch.repeat && !patch.repeat.series) patch.repeat = { ...patch.repeat, series: task.repeat?.series || task.id };
+    if (!form.date && form.repeat) patch.repeat = null; // без даты повторять не от чего
     if (Object.keys(patch).length) updateTask(task.id, patch);
     if (patch.frog) clearOtherFrogs(task.id, form.date);
     haptic('light');
@@ -106,9 +110,14 @@ export default function TaskSheet() {
             </label>
           </div>
           <div className="quick-dates">
-            <button type="button" className="chip-btn" onClick={() => set({ date: addDays(form.date || task.date, 1), time: null })}>
+            <button type="button" className="chip-btn" onClick={() => set({ date: addDays(form.date || todayISO(), 1), time: null })}>
               На день позже
             </button>
+            {form.date && (
+              <button type="button" className="chip-btn" onClick={() => set({ date: null, time: null })}>
+                Во входящие
+              </button>
+            )}
             {form.time && (
               <button type="button" className="chip-btn" onClick={() => set({ time: null })}>
                 Убрать время
@@ -152,6 +161,95 @@ export default function TaskSheet() {
               </span>
             </button>
           </div>
+
+          <fieldset className="field">
+            <legend>Подзадачи</legend>
+            {form.checklist?.length > 0 && (
+              <ul className="checklist">
+                {form.checklist.map((c) => (
+                  <li key={c.id} data-done={c.done || undefined}>
+                    <button
+                      type="button"
+                      className="check check-s"
+                      aria-pressed={c.done}
+                      aria-label={c.text}
+                      onClick={() => set({ checklist: form.checklist.map((x) => (x.id === c.id ? { ...x, done: !x.done } : x)) })}
+                    />
+                    <span>{c.text}</span>
+                    <button type="button" className="icon-btn icon-btn-s" aria-label="Убрать" onClick={() => set({ checklist: form.checklist.filter((x) => x.id !== c.id) })}>
+                      <IconClose width={16} height={16} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="inline-add">
+              <input
+                value={sub}
+                onChange={(e) => setSub(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  e.preventDefault();
+                  if (!sub.trim()) return;
+                  set({ checklist: [...(form.checklist || []), { id: uuid().slice(0, 8), text: sub.trim(), done: false }] });
+                  setSub('');
+                }}
+                placeholder="Шаг задачи, Enter — добавить"
+                maxLength={200}
+              />
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Добавить подзадачу"
+                disabled={!sub.trim()}
+                onClick={() => {
+                  set({ checklist: [...(form.checklist || []), { id: uuid().slice(0, 8), text: sub.trim(), done: false }] });
+                  setSub('');
+                }}
+              >
+                <IconPlus />
+              </button>
+            </div>
+          </fieldset>
+
+          {form.date && (
+            <fieldset className="field">
+              <legend>Повтор</legend>
+              <div className="seg-control">
+                {REPEAT_OPTIONS.map(([v, l]) => (
+                  <button
+                    key={l}
+                    type="button"
+                    aria-pressed={(form.repeat?.freq ?? null) === v}
+                    onClick={() => set({ repeat: v ? { ...(form.repeat || {}), freq: v, ...(v === 'weekly' ? { days: form.repeat?.days?.length ? form.repeat.days : [weekdayIdx(form.date)] } : { days: undefined }) } : null })}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+              {form.repeat?.freq === 'weekly' && (
+                <div className="seg-control">
+                  {WEEKDAYS_MON.map((i) => {
+                    const on = form.repeat.days?.includes(i);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        aria-pressed={!!on}
+                        onClick={() => {
+                          const days = on ? form.repeat.days.filter((x) => x !== i) : [...(form.repeat.days || []), i];
+                          set({ repeat: { ...form.repeat, days: days.length ? days : [i] } });
+                        }}
+                      >
+                        {weekdayShortByIdx(i)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {form.repeat && <p className="muted small">Когда отметишь задачу сделанной, следующая появится сама.</p>}
+            </fieldset>
+          )}
 
           {!form.time && (
             <fieldset className="field">

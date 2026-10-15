@@ -66,3 +66,28 @@ assert.equal(parseQuickAdd('позвонить !').frog, undefined);
 assert.equal(monthGrid('2026-10-15').length, 5);
 assert.equal(monthGrid('2026-10-15')[0][0], '2026-09-28');
 console.log('parse/date ok');
+
+const { nextOccurrence } = await import(R + 'repeat.js');
+assert.equal(nextOccurrence('2030-01-10', { freq: 'daily' }), '2030-01-11');
+assert.equal(nextOccurrence('2030-01-11', { freq: 'weekdays' }), '2030-01-14'); // пт -> пн
+assert.equal(nextOccurrence('2030-01-10', { freq: 'weekly', days: [1, 4] }), '2030-01-14'); // чт -> пн
+assert.equal(nextOccurrence('2030-01-31', { freq: 'monthly' }), '2030-02-28');
+console.log('repeat ok');
+
+// экспорт: на синтетических данных собирается и считает сводку
+globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
+const { buildMonthExport } = await import(R + 'export.js');
+const ex = buildMonthExport({
+  tasks: {
+    a: { id: 'a', title: 'A', date: '2030-01-10', duration_min: 60, done: true, frog: true, deleted: false, created_at: Date.UTC(2030, 0, 9) },
+    b: { id: 'b', title: 'B', date: '2030-01-11', duration_min: 30, done: false, deleted: false, created_at: Date.UTC(2030, 0, 9) },
+    c: { id: 'c', title: 'C', date: '2030-02-01', duration_min: 30, done: true, deleted: false, created_at: Date.UTC(2030, 0, 9) },
+  },
+  items: { 'day:2030-01-10': { id: 'day:2030-01-10', kind: 'day', deleted: false, data: { mood: 4, good: 'ok' } } },
+}, '2030-01-01');
+assert.equal(ex.days.length, 31);
+assert.equal(ex.summary.tasks_planned, 2);
+assert.equal(ex.summary.tasks_done, 1);
+assert.equal(ex.summary.points, 40);
+assert.equal(ex.days[9].mood, 4);
+console.log('export ok');

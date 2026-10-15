@@ -68,7 +68,7 @@ function AreaForm({ area, onClose }) {
   );
 }
 
-function AreasView() {
+export function AreasView() {
   const items = useStore((s) => s.items);
   const tasksMap = useStore((s) => s.tasks);
   const putItem = useStore((s) => s.putItem);
@@ -238,7 +238,7 @@ function Goal({ goal, tactics, week, items, areas }) {
   );
 }
 
-function PlanView() {
+export function PlanView() {
   const items = useStore((s) => s.items);
   const { putItem, patchItem, removeItem } = useStore.getState();
   const [goalText, setGoalText] = useState('');
@@ -374,24 +374,5 @@ function PlanView() {
         </div>
       </details>
     </>
-  );
-}
-
-export default function GoalsView() {
-  const mode = useStore((s) => s.goalsMode);
-  const setGoalsMode = useStore((s) => s.setGoalsMode);
-  return (
-    <div className="page goals">
-      <Segmented
-        label="Цели"
-        value={mode}
-        onChange={setGoalsMode}
-        options={[
-          ['areas', 'Сферы'],
-          ['plan', '12 недель'],
-        ]}
-      />
-      {mode === 'areas' ? <AreasView /> : <PlanView />}
-    </div>
   );
 }

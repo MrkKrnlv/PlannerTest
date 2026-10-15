@@ -3,7 +3,8 @@ import { useStore, liveItems } from '../../store.js';
 import { dayMonth, formatDuration, formatShort, minToTime, nowMin, timeToMin, todayISO } from '../../lib/date.js';
 import { areaColor } from '../../lib/areas.js';
 import { haptic } from '../../lib/telegram.js';
-import { IconBolt, IconCheck, IconFlag, IconMic } from '../Icons.jsx';
+import { IconBolt, IconCheck, IconFlag, IconMic, IconRepeat, IconList } from '../Icons.jsx';
+import { repeatLabel } from '../../lib/repeat.js';
 
 function useNow() {
   const [n, setN] = useState(nowMin);
@@ -44,6 +45,16 @@ function Tags({ task, showDate }) {
       {task.deep && !task.frog && (
         <span className="tag tag-deep">
           <IconBolt /> глубоко
+        </span>
+      )}
+      {task.checklist?.length > 0 && (
+        <span className="tag">
+          <IconList /> {task.checklist.filter((c) => c.done).length}/{task.checklist.length}
+        </span>
+      )}
+      {task.repeat && (
+        <span className="tag" title={repeatLabel(task.repeat)}>
+          <IconRepeat /> {repeatLabel(task.repeat)}
         </span>
       )}
       {task.area && <span className="tag">#{task.area}</span>}
@@ -193,8 +204,8 @@ export default function Agenda({ className = '', date, dayTasks, all }) {
 
       {dayTasks.length === 0 && (
         <div className="empty">
-          <p className="empty-title">На этот день ничего нет</p>
-          <p className="muted">Напиши задачу в поле выше или надиктуй её боту голосовым.</p>
+          <p className="empty-title">На этот день задач нет</p>
+          <p className="muted">Напиши задачу в поле выше, нажми «+» внизу или надиктуй боту голосовым.</p>
         </div>
       )}
     </section>

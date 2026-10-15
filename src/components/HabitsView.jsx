@@ -87,7 +87,7 @@ function HabitForm({ habit, onClose }) {
   );
 }
 
-export default function HabitsView() {
+export default function HabitsView({ embedded = false }) {
   const items = useStore((s) => s.items);
   const toggleLog = useStore((s) => s.toggleLog);
   const [editing, setEditing] = useState(null); // null | 'new' | habit
@@ -99,7 +99,7 @@ export default function HabitsView() {
   const inTelegram = !!getTelegram();
 
   return (
-    <div className="page habits">
+    <div className={embedded ? 'habits' : 'page habits'}>
       <header className="page-head">
         <div>
           <h1 className="page-title">Привычки</h1>
