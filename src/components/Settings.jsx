@@ -3,6 +3,8 @@ import { useStore, settingsOf } from '../store.js';
 import { syncNow } from '../lib/sync.js';
 import { getTelegram } from '../lib/telegram.js';
 import { SYNC_TEXT } from './SyncDot.jsx';
+import { Segmented } from './ui.jsx';
+import { BotCard, NotionCard } from './Integrations.jsx';
 
 const TIME_FIELDS = [
   ['dayStart', 'Начало дня'],
@@ -20,7 +22,8 @@ export default function Settings() {
   const sync = useStore((s) => s.sync);
   const items = useStore((s) => s.items);
   const pending = useStore((s) => Object.keys(s.dirty).length + Object.keys(s.itemsDirty).length);
-  const { patchItem, logout } = useStore.getState();
+  const theme = useStore((s) => s.theme);
+  const { patchItem, logout, setTheme } = useStore.getState();
   const [shown, setShown] = useState(false);
   const [copied, setCopied] = useState(false);
   const inTelegram = !!getTelegram();
@@ -46,6 +49,20 @@ export default function Settings() {
       </header>
 
       <section className="card">
+        <h2 className="card-title">Тема</h2>
+        <Segmented
+          label="Тема"
+          value={theme}
+          onChange={setTheme}
+          options={[
+            ['auto', inTelegram ? 'Как в Telegram' : 'Как в системе'],
+            ['light', 'Светлая'],
+            ['dark', 'Тёмная'],
+          ]}
+        />
+      </section>
+
+      <section className="card">
         <h2 className="card-title">Мой день</h2>
         <p className="muted small">По этим часам считается нагрузка и работает автоплан. Синхронизируется между устройствами.</p>
         <div className="time-grid">
@@ -69,6 +86,9 @@ export default function Settings() {
           </label>
         </div>
       </section>
+
+      <BotCard />
+      <NotionCard />
 
       <section className="card">
         <h2 className="card-title">Синхронизация</h2>

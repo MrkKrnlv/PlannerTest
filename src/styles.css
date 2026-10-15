@@ -243,6 +243,10 @@ mark { background: var(--amber-soft); color: inherit; border-radius: 4px; paddin
   font-size: 16px;
 }
 .field textarea { resize: vertical; line-height: 1.5; }
+/* iOS/Telegram: date и time по умолчанию шире контейнера — прижимаем */
+.field input, .field select { min-width: 0; max-width: 100%; }
+.field input[type='time'], .field input[type='date'] { -webkit-appearance: none; appearance: none; display: block; text-align: left; }
+.field input::-webkit-date-and-time-value { text-align: left; }
 .field input:focus, .field textarea:focus, .field select:focus, .inline-add input:focus, .search input:focus {
   outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft);
 }
@@ -697,7 +701,8 @@ mark { background: var(--amber-soft); color: inherit; border-radius: 4px; paddin
 .note-good { padding-left: 10px; border-left: 3px solid var(--amber); color: var(--ink-2); }
 .note-text { white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
 
-.time-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.time-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
+.time-grid .field { min-width: 0; overflow: hidden; }
 .key-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .key { flex: 1 1 220px; min-width: 0; padding: 10px 12px; border-radius: 12px; background: var(--fill); font-size: var(--fs-xs); overflow-wrap: anywhere; }
 
@@ -713,6 +718,19 @@ mark { background: var(--amber-soft); color: inherit; border-radius: 4px; paddin
 .export-actions > * { flex: 1 1 200px; }
 .export-preview summary { cursor: pointer; font-weight: 600; }
 .export-preview pre { margin: 12px 0 0; max-height: 320px; overflow: auto; font-size: 11px; line-height: 1.5; white-space: pre-wrap; color: var(--ink-2); }
+
+.status-line { font-size: var(--fs-s); padding: 10px 12px; border-radius: 12px; background: var(--fill); }
+.status-line[data-ok] { background: color-mix(in srgb, var(--mint) 13%, transparent); }
+.btn-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.howto { display: grid; gap: 6px; padding-left: 20px; list-style: decimal; font-size: var(--fs-s); color: var(--ink-2); }
+.card > .primary-btn, .card > .secondary-btn { justify-self: start; }
+.settings .segmented { justify-self: start; }
+.theme-btn { width: 44px; height: 44px; }
+.mono, .mono-block { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+.mono-block { margin: 0; white-space: pre-wrap; overflow-x: auto; color: var(--ink-2); }
+details.card > summary { cursor: pointer; list-style: none; }
+details.card > summary::-webkit-details-marker { display: none; }
+.field input[type='file'] { padding: 10px; min-height: 0; }
 
 /* =========================================================
    Вход и онбординг
@@ -859,7 +877,8 @@ mark { background: var(--amber-soft); color: inherit; border-radius: 4px; paddin
   .habit-days { grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .scale { grid-template-columns: 1fr auto; }
   .scale-dots { grid-column: 1 / -1; grid-row: 2; justify-content: space-between; }
-  .time-grid { grid-template-columns: minmax(0, 1fr); }
+  .time-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .time-grid .field > span { font-size: 0.75rem; }
   .field-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
   .mcell { aspect-ratio: auto; min-height: 50px; padding: 5px; border-radius: 11px; }
   .mcell-pts { top: 4px; right: 4px; padding: 0 4px; font-size: 0.625rem; }

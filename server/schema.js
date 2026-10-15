@@ -23,6 +23,10 @@ const STATEMENTS = [
     PRIMARY KEY (user_id, id))`,
   `CREATE INDEX IF NOT EXISTS idx_items_user_rev ON items(user_id, rev)`,
   `CREATE INDEX IF NOT EXISTS idx_items_rev ON items(rev)`,
+  // какая страница Notion соответствует задаче
+  `CREATE TABLE IF NOT EXISTS notion_pages (
+    user_id TEXT NOT NULL, task_id TEXT NOT NULL, page_id TEXT NOT NULL,
+    PRIMARY KEY (user_id, task_id))`,
 ];
 
 // Колонки, добавленные после первой версии
@@ -33,23 +37,36 @@ const TASK_COLUMNS = {
   checklist: 'TEXT', // JSON: [{ id, text, done }]
 };
 
+const USER_COLUMNS = {
+  notion_token: 'TEXT',
+  notion_db: 'TEXT',
+  notion_rev: 'INTEGER NOT NULL DEFAULT 0',
+  notion_synced_at: 'INTEGER',
+  notion_error: 'TEXT',
+};
+
+async function addColumns(db, table, columns) {
+  const { results } = await db.prepare(`PRAGMA table_info(${table})`).all();
+  const have = new Set(results.map((r) => r.name));
+  for (const [name, def] of Object.entries(columns)) {
+    if (have.has(name)) continue;
+    try {
+      await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${name} ${def}`).run();
+    } catch (err) {
+      // параллельный изолятор мог успеть первым
+      if (!String(err).includes('duplicate column')) throw err;
+    }
+  }
+}
+
 let ready = null;
 
 export function ensureSchema(db) {
   if (!ready) {
     ready = (async () => {
       await db.batch(STATEMENTS.map((s) => db.prepare(s)));
-      const { results } = await db.prepare('PRAGMA table_info(tasks)').all();
-      const have = new Set(results.map((r) => r.name));
-      const missing = Object.entries(TASK_COLUMNS).filter(([name]) => !have.has(name));
-      for (const [name, def] of missing) {
-        try {
-          await db.prepare(`ALTER TABLE tasks ADD COLUMN ${name} ${def}`).run();
-        } catch (err) {
-          // параллельный изолятор мог успеть первым
-          if (!String(err).includes('duplicate column')) throw err;
-        }
-      }
+      await addColumns(db, 'tasks', TASK_COLUMNS);
+      await addColumns(db, 'users', USER_COLUMNS);
     })().catch((err) => {
       ready = null;
       throw err;

@@ -8,6 +8,10 @@ import * as authTelegram from './routes/auth-telegram.js';
 import * as tasks from './routes/tasks.js';
 import * as tasksSync from './routes/tasks-sync.js';
 import * as items from './routes/items.js';
+import * as telegram from './routes/telegram.js';
+import * as notionRoutes from './routes/notion.js';
+import { ensureSchema } from './schema.js';
+import { syncAll } from './notion.js';
 
 const routes = {
   'GET /api/health': health.onRequestGet,
@@ -18,6 +22,13 @@ const routes = {
   'POST /api/tasks/sync': tasksSync.onRequestPost,
   'GET /api/items': items.onRequestGet,
   'POST /api/items/sync': items.onRequestPost,
+  'POST /api/telegram/webhook': telegram.webhook,
+  'POST /api/telegram/setup': telegram.setup,
+  'GET /api/telegram/status': telegram.status,
+  'GET /api/notion/status': notionRoutes.getStatus,
+  'POST /api/notion/connect': notionRoutes.postConnect,
+  'POST /api/notion/sync': notionRoutes.postSync,
+  'POST /api/notion/disconnect': notionRoutes.postDisconnect,
 };
 
 export default {
@@ -34,5 +45,10 @@ export default {
       ...context,
       next: async () => (handler ? handler(context) : json({ error: 'not found' }, 404)),
     });
+  },
+
+  // cron из wrangler.toml: раз в 5 минут досылаем изменения в Notion
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(ensureSchema(env.DB).then(() => syncAll(env)));
   },
 };

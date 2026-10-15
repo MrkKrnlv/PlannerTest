@@ -3,12 +3,14 @@ import TimersView from './TimersView.jsx';
 import NotesView from './NotesView.jsx';
 import Settings from './Settings.jsx';
 import ExportView from './ExportView.jsx';
-import { IconLeft, IconNote, IconSettings, IconTimer, IconRight, IconSpark, IconHelp } from './Icons.jsx';
+import ImportView from './ImportView.jsx';
+import { IconLeft, IconNote, IconSettings, IconTimer, IconRight, IconSpark, IconHelp, IconImport, IconSun, IconMoon } from './Icons.jsx';
 
 const ENTRIES = [
   ['timers', 'Таймеры', 'Фокус на задаче и параллельные таймеры', IconTimer],
   ['notes', 'Заметки', 'Все заметки и итоги дней с поиском', IconNote],
   ['export', 'Экспорт для Claude', 'Выгрузить месяц и получить разбор', IconSpark],
+  ['import', 'Импорт', 'Загрузить задачи и привычки из JSON', IconImport],
   ['settings', 'Настройки', 'Мои часы, синхронизация, ключ для браузера', IconSettings],
 ];
 
@@ -17,6 +19,10 @@ export default function MoreView() {
   const setMoreView = useStore((s) => s.setMoreView);
   const timers = useStore((s) => s.timers.length);
   const user = useStore((s) => s.user);
+  const theme = useStore((s) => s.theme);
+  const setTheme = useStore((s) => s.setTheme);
+  const tgScheme = document.documentElement.dataset.tgScheme;
+  const isDark = theme === 'auto' ? (tgScheme ? tgScheme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches) : theme === 'dark';
 
   if (sub) {
     return (
@@ -28,6 +34,7 @@ export default function MoreView() {
         {sub === 'timers' && <TimersView />}
         {sub === 'notes' && <NotesView />}
         {sub === 'export' && <ExportView />}
+        {sub === 'import' && <ImportView />}
         {sub === 'settings' && <Settings />}
       </div>
     );
@@ -40,6 +47,15 @@ export default function MoreView() {
           <h1 className="page-title">Ещё</h1>
           {user?.name && <p className="muted small">{user.name}</p>}
         </div>
+        <button
+          type="button"
+          className="glass-btn theme-btn"
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          aria-label={isDark ? 'Светлая тема' : 'Тёмная тема'}
+          title={theme === 'auto' ? 'Сейчас тема как в системе' : undefined}
+        >
+          {isDark ? <IconSun /> : <IconMoon />}
+        </button>
       </header>
       <ul className="menu glass">
         {ENTRIES.map(([id, title, subtitle, Icon]) => (

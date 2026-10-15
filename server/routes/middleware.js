@@ -3,7 +3,7 @@ import { timingSafeEqual } from '../crypto.js';
 import { ensureSchema } from '../schema.js';
 import { getOrCreateTgUser, getOrCreateDevUser } from '../users.js';
 
-const PUBLIC = new Set(['/api/health', '/api/auth/telegram']);
+const PUBLIC = new Set(['/api/health', '/api/auth/telegram', '/api/telegram/webhook']);
 
 /**
  * Три способа авторизоваться:

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore, liveItems, hasLog } from './store.js';
 import { api } from './lib/api.js';
 import { startSync } from './lib/sync.js';
-import { launchedFromTelegram, loadTelegram, setupTelegramChrome } from './lib/telegram.js';
+import { launchedFromTelegram, loadTelegram, setupTelegramChrome, syncTelegramColors } from './lib/telegram.js';
 import { nowMin, todayISO } from './lib/date.js';
 import { habitLogId, isScheduled } from './lib/habits.js';
 import { notify } from './lib/notify.js';
@@ -54,6 +54,25 @@ function useBoot() {
     })();
   }, []);
   return state;
+}
+
+/** Тема: ручной выбор > схема Telegram > системная */
+function useTheme() {
+  const theme = useStore((s) => s.theme);
+  useEffect(() => {
+    const apply = () => {
+      const root = document.documentElement;
+      const scheme = theme !== 'auto' ? theme : root.dataset.tgScheme || null;
+      if (scheme) root.dataset.theme = scheme;
+      else delete root.dataset.theme;
+      const dark = scheme ? scheme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', dark ? '#090b12' : '#eef1f8'));
+      syncTelegramColors();
+    };
+    apply();
+    window.addEventListener('tgtheme', apply);
+    return () => window.removeEventListener('tgtheme', apply);
+  }, [theme]);
 }
 
 /** Таймеры: по окончании уведомляем один раз */
@@ -147,6 +166,7 @@ export default function App() {
   const openSheet = useStore((s) => s.openSheet);
   useTimerAlerts();
   useHabitReminders();
+  useTheme();
 
   // после полуночи "сегодня" сдвигается; Ctrl+J — заметки
   useEffect(() => {

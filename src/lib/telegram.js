@@ -35,17 +35,11 @@ export function setupTelegramChrome() {
   } catch {
     /* старые клиенты */
   }
+  // схему Telegram запоминаем отдельно, итоговую тему решает App (ручной выбор пользователя важнее)
   const apply = () => {
-    const dark = tg.colorScheme === 'dark';
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    document.documentElement.dataset.tgScheme = tg.colorScheme === 'dark' ? 'dark' : 'light';
     document.documentElement.dataset.tg = '1';
-    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-    try {
-      tg.setHeaderColor(bg);
-      tg.setBackgroundColor(bg);
-    } catch {
-      /* setHeaderColor с hex есть не во всех версиях */
-    }
+    window.dispatchEvent(new Event('tgtheme'));
   };
   apply();
   tg.onEvent('themeChanged', apply);
@@ -56,4 +50,16 @@ export function haptic(kind = 'light') {
   if (!h) return;
   if (kind === 'success' || kind === 'warning' || kind === 'error') h.notificationOccurred(kind);
   else h.impactOccurred(kind);
+}
+
+/** Подкрасить шапку Telegram под текущий фон приложения */
+export function syncTelegramColors() {
+  if (!tg) return;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  try {
+    tg.setHeaderColor(bg);
+    tg.setBackgroundColor(bg);
+  } catch {
+    /* setHeaderColor с hex есть не во всех версиях */
+  }
 }

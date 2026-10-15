@@ -35,3 +35,6 @@ export const IconExport = I(<><path d="M12 3v12M7 8l5-5 5 5" /><path d="M5 14v6h
 export const IconHelp = I(<><circle cx="12" cy="12" r="8.5" /><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.7M12 16.8v.2" /></>);
 export const IconGrowth = I(<><path d="M4 19h16" /><path d="M6 15l4-4 3 3 5-6" /><path d="M15 8h3v3" /></>);
 export const IconToday = I(<><rect x="4" y="4.5" width="16" height="15.5" rx="4" /><path d="M8 3v3M16 3v3M4 9.5h16" /><circle cx="12" cy="14.5" r="2" fill="currentColor" stroke="none" /></>);
+export const IconImport = I(<><path d="M12 15V3M7 10l5 5 5-5" /><path d="M5 14v6h14v-6" /></>);
+export const IconSun = I(<><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" /></>);
+export const IconMoon = I(<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />);

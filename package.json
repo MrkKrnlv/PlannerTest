@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
-    "dev:api": "wrangler dev --port 8788",
+    "dev:api": "wrangler dev --config wrangler.local.toml --port 8788",
     "build": "vite build",
-    "preview": "npm run build && wrangler dev --port 8788",
+    "preview": "npm run build && wrangler dev --config wrangler.local.toml --port 8788",
     "deploy": "npm run build && wrangler deploy",
     "test:api": "node scripts/smoke-test.mjs",
-    "test:logic": "node scripts/logic-test.mjs"
+    "test:logic": "node scripts/logic-test.mjs",
+    "test:integration": "node --no-warnings scripts/integration-test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/golos-text": "^5.3.0",

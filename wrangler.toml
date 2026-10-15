@@ -14,5 +14,13 @@ binding = "DB"
 database_name = "planner"
 database_id = "2e2d823a-044c-4eb2-949d-1a8b7bc31898"
 
+# Workers AI: расшифровка голосовых и разбор задач ботом
+[ai]
+binding = "AI"
+
+# Раз в 5 минут досылаем изменения задач в Notion
+[triggers]
+crons = ["*/5 * * * *"]
+
 # BOT_TOKEN и SERVICE_KEY — только секретами (Settings → Variables and Secrets → тип Secret),
 # не в этом файле: он лежит в git.

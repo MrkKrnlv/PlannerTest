@@ -40,6 +40,7 @@ export const useStore = create(
       timers: [],
       lastAutoplan: null, // { date, before: {id: {time, slot}} } для отмены
       onboarded: false,
+      theme: 'auto', // auto | light | dark
 
       // аккаунт
       token: null,
@@ -65,6 +66,7 @@ export const useStore = create(
       openSheet: (sheet, addKind) => set({ sheet, ...(addKind ? { addKind } : {}) }),
       closeSheet: () => set({ sheet: null }),
       finishOnboarding: () => set({ onboarded: true }),
+      setTheme: (theme) => set({ theme }),
       setMoreView: (moreView) => set({ view: 'more', moreView }),
       setDate: (date) => set({ date }),
       openTask: (id) => set({ editingId: id }),
@@ -287,7 +289,7 @@ export const useStore = create(
       partialize: (s) => ({
         tasks: s.tasks, dirty: s.dirty, rev: s.rev,
         items: s.items, itemsDirty: s.itemsDirty, itemsRev: s.itemsRev,
-        timers: s.timers, lastAutoplan: s.lastAutoplan, onboarded: s.onboarded,
+        timers: s.timers, lastAutoplan: s.lastAutoplan, onboarded: s.onboarded, theme: s.theme,
         token: s.token, user: s.user, localOnly: s.localOnly,
       }),
     }
