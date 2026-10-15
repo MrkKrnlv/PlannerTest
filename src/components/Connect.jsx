@@ -28,7 +28,9 @@ export default function Connect({ error: bootError }) {
     <main className="connect">
       <div className="connect-card">
         <div className="brand brand-lg" aria-hidden="true">
-          <span className="brand-strip" />
+          <span />
+          <span />
+          <span />
         </div>
         <h1 className="connect-title">Планер</h1>
         <p>

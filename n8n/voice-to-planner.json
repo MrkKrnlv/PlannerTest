@@ -3,7 +3,7 @@
   "name": "Голос → Планер",
   "nodes": [
     {
-      "id": "7b245bb3-704b-45d9-8948-8fc8b2631386",
+      "id": "e04e4a80-d24c-43a4-9bf0-eec038093c63",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
@@ -19,7 +19,7 @@
       }
     },
     {
-      "id": "fb2d587b-4e44-40ed-9a0d-826af5c7cd9e",
+      "id": "252b1fac-1ade-44c6-b684-4b39cbbe33b0",
       "name": "Голосовое?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -37,7 +37,7 @@
           },
           "conditions": [
             {
-              "id": "34059d64-ae31-4456-bc1a-0ee9bd92c49f",
+              "id": "3000329a-82be-4751-a735-24e2ae2f4c5a",
               "leftValue": "={{ $json.message.voice }}",
               "operator": {
                 "type": "object",
@@ -53,7 +53,7 @@
       }
     },
     {
-      "id": "95545181-b8d5-4b24-a021-b67f9efb3227",
+      "id": "3bb004e6-a123-4ab8-9f75-3fdfd7f4634d",
       "name": "Скачать голосовое",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
@@ -68,7 +68,7 @@
       }
     },
     {
-      "id": "68131991-0b05-4c5d-9cd5-7e3c09d58f39",
+      "id": "38e80b8a-b0fd-4e84-b8c5-20ef0da190fa",
       "name": "Расшифровать",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
@@ -85,7 +85,7 @@
       }
     },
     {
-      "id": "dd02316a-998e-4509-b8d8-63b61a700499",
+      "id": "936dbaf1-03e0-45ba-bb26-c839e8d97ac4",
       "name": "Текст",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -97,7 +97,7 @@
         "assignments": {
           "assignments": [
             {
-              "id": "d03b947d-b617-465b-a68f-99b6e3ec1341",
+              "id": "719576fd-82aa-4899-bbdb-f8775771eb57",
               "name": "text",
               "type": "string",
               "value": "={{ $json.text ?? $('Telegram Trigger').item.json.message.text ?? '' }}"
@@ -108,7 +108,7 @@
       }
     },
     {
-      "id": "2179c8cb-b894-49d9-86e0-a5ccfce0b8d4",
+      "id": "92527a6b-f856-47de-8b25-7324ec75455b",
       "name": "Задачи на неделю",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -151,7 +151,7 @@
       }
     },
     {
-      "id": "c7f4ba39-0dbd-4ab8-8d15-f084f419ff19",
+      "id": "3187d713-d626-4826-97f1-e889c9306f9f",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2,
@@ -164,12 +164,12 @@
         "text": "=Сегодня: {{ $now.setZone('Europe/Moscow').setLocale('ru').toFormat('yyyy-MM-dd, cccc') }}.\n\nУже запланировано на 7 дней:\n{{ JSON.stringify($('Задачи на неделю').item.json.tasks) }}\n\nСообщение пользователя:\n{{ $('Текст').item.json.text }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "Ты — ассистент-планировщик. Из сообщения пользователя (часто это расшифровка голосового, с ошибками распознавания) извлекаешь задачи для планера.\n\nПравила:\n- Дата: если не названа — сегодня. «Завтра», «в пятницу», «на выходных» переводи в конкретную ближайшую будущую дату.\n- time ставь только если время названо явно. slot: morning до 12:00, afternoon 12–17, evening после 17. Если неясно — anytime.\n- duration_min: если длительность не сказана, оцени реалистично и кратно 5 (звонок 15–30, встреча 60, монтаж/код/учёба 90–180, бытовая мелочь 10–20).\n- Размытую большую задачу («разобраться с сайтом») разбей на 2–3 конкретных шага.\n- priority: 1 — если сказано «срочно», «важно», «обязательно» или есть жёсткий дедлайн; 3 — «если успею», «когда-нибудь»; иначе 2.\n- area: одно короткое слово, только если очевидно из контекста.\n- Учитывай уже запланированные задачи: не ставь новую на занятое время. Если день выходит больше 8 часов, перенеси некритичное (priority 3) на следующий день и скажи об этом в summary.\n- Не выдумывай задачи. Если в сообщении задач нет (приветствие, вопрос, /start), верни пустой tasks и коротко ответь в summary, что умеешь.\n- summary пиши на «ты», по-русски, без смайликов: что добавил и на какие дни."
+          "systemMessage": "Ты — ассистент-планировщик. Из сообщения пользователя (часто это расшифровка голосового, с ошибками распознавания) извлекаешь задачи для планера.\n\nПравила:\n- Дата: если не названа — сегодня. «Завтра», «в пятницу», «на выходных» переводи в конкретную ближайшую будущую дату.\n- time ставь только если время названо явно. slot: morning до 12:00, afternoon 12–17, evening после 17. Если неясно — anytime.\n- duration_min: если длительность не сказана, оцени реалистично и кратно 5 (звонок 15–30, встреча 60, монтаж/код/учёба 90–180, бытовая мелочь 10–20).\n- Размытую большую задачу («разобраться с сайтом») разбей на 2–3 конкретных шага.\n- priority: 1 — если сказано «срочно», «важно», «обязательно» или есть жёсткий дедлайн; 3 — «если успею», «когда-нибудь»; иначе 2.\n- area: одно короткое слово из списка: работа, учёба, здоровье, люди, дом, творчество — только если очевидно из контекста.\n- deep: true для задач, требующих концентрации (код, монтаж, тексты, учёба) от 60 минут. Такие задачи планер ставит в пик энергии.\n- frog: true максимум для одной задачи на день — самой важной, если пользователь так её обозначил («главное», «в первую очередь»).\n- Учитывай уже запланированные задачи: не ставь новую на занятое время. Если день выходит больше 8 часов, перенеси некритичное (priority 3) на следующий день и скажи об этом в summary.\n- Не выдумывай задачи. Если в сообщении задач нет (приветствие, вопрос, /start), верни пустой tasks и коротко ответь в summary, что умеешь.\n- summary пиши на «ты», по-русски, без смайликов: что добавил и на какие дни."
         }
       }
     },
     {
-      "id": "1028bc59-7273-4fc6-b6d8-6c231cee8360",
+      "id": "809305fe-3473-4b06-951e-2666e8a25b71",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
@@ -190,7 +190,7 @@
       }
     },
     {
-      "id": "b0d81435-e30b-402f-bdf0-97a0c8745596",
+      "id": "e9feae34-74d4-4189-81f3-a4a0795ba3f0",
       "name": "Structured Output Parser",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
@@ -200,11 +200,11 @@
       ],
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tasks\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": {\n            \"type\": \"string\",\n            \"description\": \"Коротко, с глагола: «Позвонить Ане»\"\n          },\n          \"date\": {\n            \"type\": \"string\",\n            \"description\": \"YYYY-MM-DD\"\n          },\n          \"time\": {\n            \"type\": [\n              \"string\",\n              \"null\"\n            ],\n            \"description\": \"HH:MM, только если время названо\"\n          },\n          \"duration_min\": {\n            \"type\": \"integer\",\n            \"description\": \"Оценка в минутах, кратно 5\"\n          },\n          \"slot\": {\n            \"type\": \"string\",\n            \"enum\": [\n              \"morning\",\n              \"afternoon\",\n              \"evening\",\n              \"anytime\"\n            ]\n          },\n          \"area\": {\n            \"type\": [\n              \"string\",\n              \"null\"\n            ],\n            \"description\": \"работа, учёба, дом, здоровье, клиенты\"\n          },\n          \"priority\": {\n            \"type\": \"integer\",\n            \"minimum\": 1,\n            \"maximum\": 3\n          }\n        },\n        \"required\": [\n          \"title\",\n          \"date\",\n          \"duration_min\",\n          \"slot\",\n          \"priority\"\n        ]\n      }\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"description\": \"1–3 предложения пользователю: что и куда добавлено\"\n    }\n  },\n  \"required\": [\n    \"tasks\",\n    \"summary\"\n  ]\n}"
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tasks\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": {\n            \"type\": \"string\",\n            \"description\": \"Коротко, с глагола: «Позвонить Ане»\"\n          },\n          \"date\": {\n            \"type\": \"string\",\n            \"description\": \"YYYY-MM-DD\"\n          },\n          \"time\": {\n            \"type\": [\n              \"string\",\n              \"null\"\n            ],\n            \"description\": \"HH:MM, только если время названо\"\n          },\n          \"duration_min\": {\n            \"type\": \"integer\",\n            \"description\": \"Оценка в минутах, кратно 5\"\n          },\n          \"slot\": {\n            \"type\": \"string\",\n            \"enum\": [\n              \"morning\",\n              \"afternoon\",\n              \"evening\",\n              \"anytime\"\n            ]\n          },\n          \"area\": {\n            \"type\": [\n              \"string\",\n              \"null\"\n            ],\n            \"description\": \"работа, учёба, дом, здоровье, клиенты\"\n          },\n          \"priority\": {\n            \"type\": \"integer\",\n            \"minimum\": 1,\n            \"maximum\": 3\n          },\n          \"deep\": {\n            \"type\": \"boolean\",\n            \"description\": \"Глубокая работа: требует концентрации, от 60 минут\"\n          },\n          \"frog\": {\n            \"type\": \"boolean\",\n            \"description\": \"Главная задача дня, максимум одна на день\"\n          }\n        },\n        \"required\": [\n          \"title\",\n          \"date\",\n          \"duration_min\",\n          \"slot\",\n          \"priority\"\n        ]\n      }\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"description\": \"1–3 предложения пользователю: что и куда добавлено\"\n    }\n  },\n  \"required\": [\n    \"tasks\",\n    \"summary\"\n  ]\n}"
       }
     },
     {
-      "id": "be1e693d-a69f-406b-adf9-ce77d8e1ea99",
+      "id": "8a888286-c78f-450b-809a-7f903e72634a",
       "name": "Есть задачи?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -222,7 +222,7 @@
           },
           "conditions": [
             {
-              "id": "92566d71-cb0a-41ad-97e8-effa53ac158c",
+              "id": "a0fd4b92-fe1f-40c1-9300-3fc6d47ffc30",
               "leftValue": "={{ $json.output.tasks.length }}",
               "operator": {
                 "type": "number",
@@ -237,7 +237,7 @@
       }
     },
     {
-      "id": "2589f331-67e4-4a9e-b273-0fd2e4d4befa",
+      "id": "a47b80b3-ec6d-4303-b3cd-d71ba4fc9a0f",
       "name": "Добавить в планер",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -271,7 +271,7 @@
       }
     },
     {
-      "id": "6038c099-b19f-4a2c-b759-1bac632684c5",
+      "id": "c63546a1-89d1-4354-be3a-6bd68a354433",
       "name": "Ответить в Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,

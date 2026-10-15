@@ -23,7 +23,7 @@ export async function onRequestGet({ request, env, data }) {
     return json({
       tasks: results.map((r) => ({
         id: r.id, title: r.title, date: r.date, time: r.time, slot: r.slot,
-        duration_min: r.duration_min, area: r.area, priority: r.priority, done: !!r.done,
+        duration_min: r.duration_min, area: r.area, priority: r.priority, deep: !!r.deep, frog: !!r.frog, done: !!r.done,
       })),
     });
   }

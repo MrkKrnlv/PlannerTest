@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useStore, liveTasks } from '../store.js';
+import { useEffect, useMemo, useState } from 'react';
+import { useStore, liveItems } from '../store.js';
+import { addDays, slotFromTime } from '../lib/date.js';
 import { haptic } from '../lib/telegram.js';
-import { IconClose } from './Icons.jsx';
+import { Sheet, Dot } from './ui.jsx';
+import { IconBolt, IconFlag, IconTimer } from './Icons.jsx';
 
 const DURATIONS = [15, 30, 45, 60, 90, 120, 180];
 const SLOTS = [
@@ -19,70 +21,68 @@ const PRIORITIES = [
 export default function TaskSheet() {
   const id = useStore((s) => s.editingId);
   const task = useStore((s) => (s.editingId ? s.tasks[s.editingId] : null));
-  const tasksMap = useStore((s) => s.tasks);
-  const { closeTask, updateTask, deleteTask } = useStore.getState();
+  const items = useStore((s) => s.items);
+  const { closeTask, updateTask, deleteTask, clearOtherFrogs, startTimer, setMoreView, showToast } = useStore.getState();
   const [form, setForm] = useState(null);
-  const dialogRef = useRef(null);
 
   useEffect(() => {
     setForm(task ? { ...task } : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-
-  useEffect(() => {
-    const dlg = dialogRef.current;
-    if (!dlg) return;
-    if (id && !dlg.open) dlg.showModal();
-    if (!id && dlg.open) dlg.close();
-  }, [id]);
-
-  // задачу удалили на другом устройстве, пока она была открыта
   useEffect(() => {
     if (id && !task) closeTask();
   }, [id, task, closeTask]);
 
-  const areas = useMemo(
-    () => [...new Set(liveTasks(tasksMap).map((t) => t.area).filter(Boolean))].sort(),
-    [tasksMap]
-  );
-
+  const areas = useMemo(() => liveItems(items, 'area').sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0)), [items]);
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   const save = (e) => {
-    e.preventDefault();
-    if (!form.title.trim()) return;
+    e?.preventDefault();
+    if (!form?.title.trim()) return;
     const patch = {};
-    for (const k of ['title', 'date', 'time', 'slot', 'duration_min', 'area', 'priority', 'note', 'done']) {
+    for (const k of ['title', 'date', 'time', 'slot', 'duration_min', 'area', 'priority', 'note', 'deep', 'frog', 'done']) {
       if (form[k] !== task[k]) patch[k] = form[k];
     }
     if (Object.keys(patch).length) updateTask(task.id, patch);
+    if (patch.frog) clearOtherFrogs(task.id, form.date);
     haptic('light');
     closeTask();
   };
 
-  const remove = () => {
-    deleteTask(task.id);
-    haptic('warning');
-    closeTask();
+  const focus = (minutes) => {
+    save();
+    startTimer({ kind: 'focus', label: form.title, minutes, taskId: task.id });
+    showToast(`Фокус ${minutes} мин: ${form.title}`, { label: 'Таймеры', run: () => setMoreView('timers') });
   };
 
   return (
-    <dialog
-      ref={dialogRef}
-      className="sheet"
+    <Sheet
+      open={!!(form && task)}
       onClose={closeTask}
-      onClick={(e) => e.target === dialogRef.current && closeTask()}
-      aria-labelledby="sheet-title"
-    >
-      {form && task && (
-        <form className="sheet-body" onSubmit={save}>
-          <div className="sheet-head">
-            <h2 id="sheet-title" className="sheet-title">Задача</h2>
-            <button type="button" className="icon-btn" onClick={closeTask} aria-label="Закрыть">
-              <IconClose />
+      title="Задача"
+      footer={
+        form && (
+          <>
+            <button
+              type="button"
+              className="text-btn danger"
+              onClick={() => {
+                deleteTask(task.id);
+                haptic('warning');
+                closeTask();
+              }}
+            >
+              Удалить
             </button>
-          </div>
-
+            <button type="submit" form="task-form" className="primary-btn">
+              Сохранить
+            </button>
+          </>
+        )
+      }
+    >
+      {form && (
+        <form id="task-form" className="form" onSubmit={save}>
           <label className="field">
             <span>Название</span>
             <input value={form.title} onChange={(e) => set({ title: e.target.value })} required maxLength={300} />
@@ -100,10 +100,20 @@ export default function TaskSheet() {
                 value={form.time || ''}
                 onChange={(e) => {
                   const time = e.target.value || null;
-                  set({ time, slot: time ? (+time.slice(0, 2) < 12 ? 'morning' : +time.slice(0, 2) < 17 ? 'afternoon' : 'evening') : form.slot });
+                  set({ time, slot: time ? slotFromTime(time) : form.slot });
                 }}
               />
             </label>
+          </div>
+          <div className="quick-dates">
+            <button type="button" className="chip-btn" onClick={() => set({ date: addDays(form.date || task.date, 1), time: null })}>
+              На день позже
+            </button>
+            {form.time && (
+              <button type="button" className="chip-btn" onClick={() => set({ time: null })}>
+                Убрать время
+              </button>
+            )}
           </div>
 
           <fieldset className="field">
@@ -125,6 +135,23 @@ export default function TaskSheet() {
               />
             </div>
           </fieldset>
+
+          <div className="toggles">
+            <button type="button" className="toggle" aria-pressed={!!form.frog} data-kind="frog" onClick={() => set({ frog: !form.frog, priority: !form.frog ? 1 : form.priority })}>
+              <IconFlag />
+              <span>
+                <b>Главное на день</b>
+                <small>Одна задача, ради которой день удался</small>
+              </span>
+            </button>
+            <button type="button" className="toggle" aria-pressed={!!form.deep} data-kind="deep" onClick={() => set({ deep: !form.deep })}>
+              <IconBolt />
+              <span>
+                <b>Глубокая работа</b>
+                <small>Автоплан поставит в пик энергии</small>
+              </span>
+            </button>
+          </div>
 
           {!form.time && (
             <fieldset className="field">
@@ -150,37 +177,45 @@ export default function TaskSheet() {
             </div>
           </fieldset>
 
-          <label className="field">
-            <span>Сфера</span>
-            <input
-              value={form.area || ''}
-              onChange={(e) => set({ area: e.target.value.replace(/^#/, '') || null })}
-              list="areas"
-              placeholder="работа, учёба, дом"
-              maxLength={40}
-            />
-            <datalist id="areas">
+          <fieldset className="field">
+            <legend>Сфера</legend>
+            <div className="seg-control">
+              <button type="button" aria-pressed={!form.area} onClick={() => set({ area: null })}>
+                Без сферы
+              </button>
               {areas.map((a) => (
-                <option key={a} value={a} />
+                <button key={a.id} type="button" aria-pressed={form.area?.toLowerCase() === a.data.name.toLowerCase()} onClick={() => set({ area: a.data.name })}>
+                  <Dot color={a.data.color} />
+                  {a.data.name}
+                </button>
               ))}
-            </datalist>
-          </label>
+              {form.area && !areas.some((a) => a.data.name.toLowerCase() === form.area.toLowerCase()) && (
+                <button type="button" aria-pressed="true">
+                  #{form.area}
+                </button>
+              )}
+            </div>
+          </fieldset>
 
           <label className="field">
             <span>Заметка</span>
             <textarea rows={3} value={form.note || ''} onChange={(e) => set({ note: e.target.value || null })} maxLength={2000} />
           </label>
 
-          <div className="sheet-actions">
-            <button type="button" className="text-btn danger" onClick={remove}>
-              Удалить
-            </button>
-            <button type="submit" className="primary-btn">
-              Сохранить
-            </button>
-          </div>
+          {!form.done && (
+            <div className="focus-row">
+              <IconTimer />
+              <span>Фокус на задаче</span>
+              <button type="button" className="chip-btn" onClick={() => focus(25)}>
+                25 мин
+              </button>
+              <button type="button" className="chip-btn" onClick={() => focus(50)}>
+                50 мин
+              </button>
+            </div>
+          )}
         </form>
       )}
-    </dialog>
+    </Sheet>
   );
 }

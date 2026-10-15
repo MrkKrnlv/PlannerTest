@@ -7,6 +7,7 @@ import * as me from './routes/me.js';
 import * as authTelegram from './routes/auth-telegram.js';
 import * as tasks from './routes/tasks.js';
 import * as tasksSync from './routes/tasks-sync.js';
+import * as items from './routes/items.js';
 
 const routes = {
   'GET /api/health': health.onRequestGet,
@@ -15,6 +16,8 @@ const routes = {
   'GET /api/tasks': tasks.onRequestGet,
   'POST /api/tasks': tasks.onRequestPost,
   'POST /api/tasks/sync': tasksSync.onRequestPost,
+  'GET /api/items': items.onRequestGet,
+  'POST /api/items/sync': items.onRequestPost,
 };
 
 export default {

@@ -13,7 +13,6 @@ run_worker_first = ["/api/*"]
 binding = "DB"
 database_name = "planner"
 database_id = "2e2d823a-044c-4eb2-949d-1a8b7bc31898"
-migrations_dir = "migrations"
 
 # BOT_TOKEN и SERVICE_KEY — только секретами (Settings → Variables and Secrets → тип Secret),
 # не в этом файле: он лежит в git.

@@ -42,6 +42,8 @@ export function normalizeTask(raw, { requireId = true } = {}) {
     area: str(raw.area, 40),
     priority: clampInt(raw.priority, 1, 3, 2),
     note: str(raw.note, 2000),
+    deep: raw.deep ? 1 : 0,
+    frog: raw.frog ? 1 : 0,
     done: raw.done ? 1 : 0,
     deleted: raw.deleted ? 1 : 0,
     source: ['app', 'voice', 'api'].includes(raw.source) ? raw.source : 'app',
@@ -52,7 +54,7 @@ export function normalizeTask(raw, { requireId = true } = {}) {
 
 const COLS = [
   'id', 'user_id', 'title', 'date', 'slot', 'time', 'duration_min', 'area',
-  'priority', 'note', 'done', 'deleted', 'source', 'created_at', 'updated_at',
+  'priority', 'note', 'deep', 'frog', 'done', 'deleted', 'source', 'created_at', 'updated_at',
 ];
 const UPDATABLE = COLS.filter((c) => !['id', 'user_id', 'created_at'].includes(c));
 
@@ -81,6 +83,8 @@ export const toClient = (r) => ({
   area: r.area,
   priority: r.priority,
   note: r.note,
+  deep: !!r.deep,
+  frog: !!r.frog,
   done: !!r.done,
   deleted: !!r.deleted,
   source: r.source,

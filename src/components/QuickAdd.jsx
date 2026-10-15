@@ -27,7 +27,8 @@ const QuickAdd = forwardRef(function QuickAdd({ defaultDate }, ref) {
     else if (parsed.slot) chips.push(SLOT_LABEL[parsed.slot]);
     if (parsed.duration_min) chips.push(formatDuration(parsed.duration_min));
     if (parsed.area) chips.push(`#${parsed.area}`);
-    if (parsed.priority === 1) chips.push('важно');
+    if (parsed.frog) chips.push('главное на день');
+    else if (parsed.priority === 1) chips.push('важно');
     if (parsed.priority === 3) chips.push('не срочно');
   }
 
@@ -40,6 +41,7 @@ const QuickAdd = forwardRef(function QuickAdd({ defaultDate }, ref) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="Созвон в 16:00 1ч #работа"
+          aria-describedby="quick-hint"
           enterKeyHint="done"
           autoComplete="off"
         />
@@ -47,6 +49,11 @@ const QuickAdd = forwardRef(function QuickAdd({ defaultDate }, ref) {
           <IconPlus />
         </button>
       </label>
+      {chips.length === 0 && (
+        <p id="quick-hint" className="quick-hint">
+          Пиши как думаешь: «завтра в 10», «1.5ч», «#сфера», «!» важно, «!!» главное на день
+        </p>
+      )}
       {chips.length > 0 && (
         <div className="quick-chips" aria-live="polite">
           {chips.map((c) => (

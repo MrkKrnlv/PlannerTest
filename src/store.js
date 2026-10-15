@@ -2,56 +2,89 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { todayISO, slotFromTime } from './lib/date.js';
 
-const uuid = () =>
+export const uuid = () =>
   crypto.randomUUID?.() ??
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
 
-// updated_at строго растёт для конкретной задачи, даже если часы устройства "прыгнули назад"
+// updated_at строго растёт для конкретной записи, даже если часы устройства "прыгнули назад"
 const bump = (prev) => Math.max(Date.now(), (prev?.updated_at ?? 0) + 1);
+
+export const DEFAULT_SETTINGS = {
+  dayStart: '09:00',
+  dayEnd: '20:00',
+  peakStart: '09:30',
+  peakEnd: '12:30',
+  lunchStart: '13:00',
+  lunchEnd: '14:00',
+  breakMin: 10,
+  timeShare: 0.65, // какую долю рабочего дня реально можно занять задачами
+  headCapMin: 210, // сколько глубокой работы голова тянет за день
+};
 
 export const useStore = create(
   persist(
     (set, get) => ({
-      // данные
-      tasks: {}, // id -> task (включая локальные надгробия deleted=true до отправки)
-      dirty: {}, // id -> true: есть неотправленные правки
-      rev: 0, // последняя серверная ревизия, которую мы видели
+      // --- задачи (таблица tasks)
+      tasks: {},
+      dirty: {},
+      rev: 0,
+      // --- документы (таблица items): привычки, отметки, дни, сферы, цели, настройки
+      items: {},
+      itemsDirty: {},
+      itemsRev: 0,
+      // --- только на этом устройстве
+      timers: [],
+      lastAutoplan: null, // { date, before: {id: {time, slot}} } для отмены
 
       // аккаунт
       token: null,
       user: null,
       localOnly: false,
-      capacityMin: 480, // сколько минут задач в день считаем нормой
 
       // интерфейс (не сохраняется)
       view: 'day',
+      calMode: 'week',
+      goalsMode: 'areas',
+      moreView: null,
       date: todayISO(),
       editingId: null,
+      toast: null,
       sync: { status: 'idle', at: null, error: null },
 
       // --- навигация
-      setView: (view) => set({ view }),
+      setView: (view) => set({ view, moreView: null }),
+      setCalMode: (calMode) => set({ calMode }),
+      setGoalsMode: (goalsMode) => set({ goalsMode }),
+      setMoreView: (moreView) => set({ view: 'more', moreView }),
       setDate: (date) => set({ date }),
       openTask: (id) => set({ editingId: id }),
       closeTask: () => set({ editingId: null }),
+      showToast: (text, action) => {
+        const id = Date.now();
+        set({ toast: { id, text, action } });
+        setTimeout(() => get().toast?.id === id && set({ toast: null }), 5000);
+      },
 
       // --- задачи
       addTask: (input) => {
         const now = Date.now();
         const time = input.time || null;
+        const duration = input.duration_min || 30;
         const task = {
           id: uuid(),
           title: input.title.trim(),
           date: input.date ?? get().date,
           time,
           slot: input.slot || slotFromTime(time),
-          duration_min: input.duration_min || 30,
+          duration_min: duration,
           area: input.area || null,
           priority: input.priority || 2,
           note: input.note || null,
+          deep: input.deep ?? duration >= 60,
+          frog: !!input.frog,
           done: false,
           deleted: false,
           source: 'app',
@@ -59,6 +92,7 @@ export const useStore = create(
           updated_at: now,
         };
         set((s) => ({ tasks: { ...s.tasks, [task.id]: task }, dirty: { ...s.dirty, [task.id]: true } }));
+        if (task.frog) get().clearOtherFrogs(task.id, task.date);
         return task;
       },
 
@@ -71,32 +105,109 @@ export const useStore = create(
           return { tasks: { ...s.tasks, [id]: next }, dirty: { ...s.dirty, [id]: true } };
         }),
 
+      // главная задача дня может быть только одна
+      clearOtherFrogs: (keepId, date) => {
+        for (const t of Object.values(get().tasks)) {
+          if (t.id !== keepId && t.frog && t.date === date && !t.deleted) get().updateTask(t.id, { frog: false });
+        }
+      },
+
       toggleDone: (id) => get().updateTask(id, { done: !get().tasks[id]?.done }),
       deleteTask: (id) => get().updateTask(id, { deleted: true }),
+      moveTasks: (ids, date) => ids.forEach((id) => get().updateTask(id, { date, time: null })),
 
-      moveTasks: (ids, date) => ids.forEach((id) => get().updateTask(id, { date })),
+      applyAutoplan: (date, placements) => {
+        const before = {};
+        for (const [id, time] of Object.entries(placements)) {
+          const t = get().tasks[id];
+          before[id] = { time: t.time, slot: t.slot };
+          get().updateTask(id, { time });
+        }
+        set({ lastAutoplan: { date, before } });
+      },
+      undoAutoplan: () => {
+        const last = get().lastAutoplan;
+        if (!last) return;
+        for (const [id, prev] of Object.entries(last.before)) get().updateTask(id, prev);
+        set({ lastAutoplan: null });
+      },
 
-      // --- синхронизация (вызывается из lib/sync.js)
+      // --- документы
+      putItem: (id, kind, data) =>
+        set((s) => {
+          const prev = s.items[id];
+          const now = Date.now();
+          const item = { id, kind, data, deleted: false, created_at: prev?.created_at ?? now, updated_at: bump(prev) };
+          return { items: { ...s.items, [id]: item }, itemsDirty: { ...s.itemsDirty, [id]: true } };
+        }),
+      patchItem: (id, kind, patch) => {
+        const prev = get().items[id];
+        get().putItem(id, kind, { ...(prev && !prev.deleted ? prev.data : {}), ...patch });
+      },
+      removeItem: (id) =>
+        set((s) => {
+          const prev = s.items[id];
+          if (!prev) return {};
+          return {
+            items: { ...s.items, [id]: { ...prev, deleted: true, updated_at: bump(prev) } },
+            itemsDirty: { ...s.itemsDirty, [id]: true },
+          };
+        }),
+      toggleLog: (id, kind) => {
+        const prev = get().items[id];
+        if (prev && !prev.deleted) get().removeItem(id);
+        else get().putItem(id, kind, { done: true });
+      },
+
+      // --- таймеры (локально)
+      startTimer: ({ label, minutes, kind = 'side', taskId = null }) =>
+        set((s) => ({
+          timers: [
+            ...s.timers.filter((t) => !(kind === 'focus' && t.kind === 'focus')),
+            { id: uuid(), kind, label, minutes, taskId, endsAt: Date.now() + minutes * 60_000, pausedLeft: null, notified: false },
+          ],
+        })),
+      pauseTimer: (id) =>
+        set((s) => ({
+          timers: s.timers.map((t) => (t.id === id && t.endsAt ? { ...t, pausedLeft: Math.max(0, t.endsAt - Date.now()), endsAt: null } : t)),
+        })),
+      resumeTimer: (id) =>
+        set((s) => ({
+          timers: s.timers.map((t) => (t.id === id && t.pausedLeft != null ? { ...t, endsAt: Date.now() + t.pausedLeft, pausedLeft: null } : t)),
+        })),
+      markTimerNotified: (id) => set((s) => ({ timers: s.timers.map((t) => (t.id === id ? { ...t, notified: true } : t)) })),
+      removeTimer: (id) => set((s) => ({ timers: s.timers.filter((t) => t.id !== id) })),
+
+      // --- синхронизация (lib/sync.js)
       markPushed: (snapshot) =>
         set((s) => {
           const dirty = { ...s.dirty };
           const tasks = { ...s.tasks };
           for (const t of snapshot) {
-            // если пока шёл запрос задачу снова правили — оставляем грязной
             if (s.tasks[t.id]?.updated_at !== t.updated_at) continue;
             delete dirty[t.id];
             if (t.deleted) delete tasks[t.id];
           }
           return { dirty, tasks };
         }),
-
+      markItemsPushed: (snapshot) =>
+        set((s) => {
+          const itemsDirty = { ...s.itemsDirty };
+          const items = { ...s.items };
+          for (const it of snapshot) {
+            if (s.items[it.id]?.updated_at !== it.updated_at) continue;
+            delete itemsDirty[it.id];
+            if (it.deleted) delete items[it.id];
+          }
+          return { itemsDirty, items };
+        }),
       applyRemote: (incoming, rev) =>
         set((s) => {
           const tasks = { ...s.tasks };
           const dirty = { ...s.dirty };
           for (const r of incoming) {
             const local = tasks[r.id];
-            if (local && dirty[r.id] && local.updated_at > r.updated_at) continue; // наша правка новее
+            if (local && dirty[r.id] && local.updated_at > r.updated_at) continue;
             delete dirty[r.id];
             if (r.deleted) delete tasks[r.id];
             else {
@@ -106,27 +217,43 @@ export const useStore = create(
           }
           return { tasks, dirty, rev: Math.max(s.rev, rev) };
         }),
-
+      applyRemoteItems: (incoming, rev) =>
+        set((s) => {
+          const items = { ...s.items };
+          const itemsDirty = { ...s.itemsDirty };
+          for (const r of incoming) {
+            const local = items[r.id];
+            if (local && itemsDirty[r.id] && local.updated_at > r.updated_at) continue;
+            delete itemsDirty[r.id];
+            if (r.deleted) delete items[r.id];
+            else {
+              const { rev: _rev, ...item } = r;
+              items[r.id] = item;
+            }
+          }
+          return { items, itemsDirty, itemsRev: Math.max(s.itemsRev, rev) };
+        }),
       setSync: (patch) => set((s) => ({ sync: { ...s.sync, ...patch } })),
 
       // --- аккаунт
       setAuth: ({ token, user }) => set({ token, user, localOnly: false }),
       enableLocalOnly: () => set({ localOnly: true }),
-      setCapacity: (capacityMin) => set({ capacityMin }),
       logout: () =>
-        set({ token: null, user: null, localOnly: false, tasks: {}, dirty: {}, rev: 0, sync: { status: 'idle', at: null, error: null } }),
+        set({
+          token: null, user: null, localOnly: false,
+          tasks: {}, dirty: {}, rev: 0, items: {}, itemsDirty: {}, itemsRev: 0,
+          sync: { status: 'idle', at: null, error: null },
+        }),
     }),
     {
       name: 'planner-v1',
-      version: 1,
+      version: 2,
+      migrate: (state) => ({ items: {}, itemsDirty: {}, itemsRev: 0, timers: [], ...state }),
       partialize: (s) => ({
-        tasks: s.tasks,
-        dirty: s.dirty,
-        rev: s.rev,
-        token: s.token,
-        user: s.user,
-        localOnly: s.localOnly,
-        capacityMin: s.capacityMin,
+        tasks: s.tasks, dirty: s.dirty, rev: s.rev,
+        items: s.items, itemsDirty: s.itemsDirty, itemsRev: s.itemsRev,
+        timers: s.timers, lastAutoplan: s.lastAutoplan,
+        token: s.token, user: s.user, localOnly: s.localOnly,
       }),
     }
   )
@@ -134,11 +261,16 @@ export const useStore = create(
 
 // --- селекторы
 export const liveTasks = (tasks) => Object.values(tasks).filter((t) => !t.deleted);
+export const liveItems = (items, kind) =>
+  Object.values(items).filter((i) => !i.deleted && i.kind === kind);
+export const hasLog = (items, id) => !!items[id] && !items[id].deleted;
+export const settingsOf = (items) => ({ ...DEFAULT_SETTINGS, ...(items.settings && !items.settings.deleted ? items.settings.data : {}) });
 
 const SLOT_ORDER = { morning: 0, afternoon: 1, evening: 2, anytime: 3 };
 export const byOrder = (a, b) =>
   Number(a.done) - Number(b.done) ||
   (a.time || '99').localeCompare(b.time || '99') ||
+  Number(b.frog) - Number(a.frog) ||
   a.priority - b.priority ||
   SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] ||
   a.created_at - b.created_at;

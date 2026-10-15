@@ -1,5 +1,6 @@
 import { json, HttpError } from '../http.js';
 import { timingSafeEqual } from '../crypto.js';
+import { ensureSchema } from '../schema.js';
 import { getOrCreateTgUser, getOrCreateDevUser } from '../users.js';
 
 const PUBLIC = new Set(['/api/health', '/api/auth/telegram']);
@@ -36,6 +37,7 @@ export async function onRequest(context) {
   const { request, env, next, data } = context;
   try {
     if (!env.DB) throw new HttpError(500, 'D1 binding DB is not configured');
+    await ensureSchema(env.DB);
     const path = new URL(request.url).pathname.replace(/\/+$/, '');
     if (!PUBLIC.has(path)) {
       const user = await resolveUser(request, env);

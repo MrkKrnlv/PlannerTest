@@ -2,7 +2,7 @@
 // - навигация: сначала сеть, при офлайне — закэшированный index.html
 // - /assets/* (имена с хэшем): кэш навсегда
 // - /api/* и чужие домены не трогаем: данные живут в localStorage и синкаются сами
-const CACHE = 'planner-v1';
+const CACHE = 'planner-v2';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon.svg'];
 
 self.addEventListener('install', (e) => {

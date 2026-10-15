@@ -113,4 +113,25 @@ assert.equal(mine.data.tasks.find((t) => t.id === id).title, 'Новая'); ok('
 // 12. Мусор отклоняется
 assert.equal((await call('POST', '/api/tasks/sync', { token, body: { changes: [{ id: 'x', title: '' }] } })).status, 400); ok('валидация');
 
+// 13. Документы (привычки, заметки дня и т.д.) синкаются так же
+const hid = `habit-${TG_ID}`;
+const it0 = Date.now();
+await call('POST', '/api/items/sync', { token, body: { changes: [
+  { id: hid, kind: 'habit', data: { name: 'Витамины', days: [1, 2, 3, 4, 5] }, updated_at: it0, created_at: it0 },
+  { id: `hl:${hid}:2026-10-15`, kind: 'habit_log', data: { done: true }, updated_at: it0, created_at: it0 },
+] } });
+let items = await call('GET', '/api/items?since=0', { token });
+assert.equal(items.data.items.length, 2);
+assert.equal(items.data.items.find((i) => i.id === hid).data.name, 'Витамины');
+await call('POST', '/api/items/sync', { token, body: { changes: [{ id: hid, kind: 'habit', data: { name: 'Старое' }, updated_at: it0 - 1 }] } });
+items = await call('GET', `/api/items?since=${items.data.rev}`, { token });
+assert.equal(items.data.items.length, 0); ok('документы: синк и LWW');
+assert.equal((await call('GET', '/api/items?since=0', { token: other })).data.items.length, 0); ok('документы изолированы');
+assert.equal((await call('POST', '/api/items/sync', { token, body: { changes: [{ id: 'x', kind: 'hack', data: {} }] } })).status, 400); ok('валидация документов');
+
+// 14. Поля deep/frog у задач
+await call('POST', '/api/tasks/sync', { token, body: { changes: [{ id: randomUUID(), title: 'Монтаж', date: '2026-10-20', deep: true, frog: true, updated_at: Date.now() }] } });
+const deepTask = (await call('GET', '/api/tasks?from=2026-10-20&to=2026-10-20', { token })).data.tasks[0];
+assert.ok(deepTask.deep && deepTask.frog); ok('deep и frog сохраняются');
+
 console.log('\nВсе проверки пройдены');

@@ -15,8 +15,9 @@ const WEEKDAYS = [
 ];
 
 const RULES = [
-  // приоритет: ! или !! — высокий, ~ — низкий
-  { re: /(^|\s)!{1,2}(?=\s|$)/, apply: (r) => { r.priority = 1; } },
+  // !! — главная задача дня, ! — важно, ~ — не срочно
+  { re: /(^|\s)!!(?=\s|$)/, apply: (r) => { r.priority = 1; r.frog = true; } },
+  { re: /(^|\s)!(?=\s|$)/, apply: (r) => { r.priority = 1; } },
   { re: /(^|\s)~(?=\s|$)/, apply: (r) => { r.priority = 3; } },
   // сфера
   { re: /(^|\s)#([\p{L}\p{N}_-]{1,40})/u, apply: (r, m) => { r.area = m[2]; } },

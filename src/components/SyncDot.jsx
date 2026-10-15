@@ -11,7 +11,7 @@ export const SYNC_TEXT = {
 
 export default function SyncDot() {
   const status = useStore((s) => (s.localOnly ? 'local' : s.sync.status));
-  const pending = useStore((s) => Object.keys(s.dirty).length);
+  const pending = useStore((s) => Object.keys(s.dirty).length + Object.keys(s.itemsDirty).length);
   const label = status === 'local' ? 'Только на этом устройстве' : SYNC_TEXT[status];
   return (
     <span className="sync" data-status={status} title={label}>
