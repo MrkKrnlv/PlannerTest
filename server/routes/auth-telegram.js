@@ -1,6 +1,6 @@
-import { json, readJson, HttpError } from '../../../server/http.js';
-import { validateInitData } from '../../../server/crypto.js';
-import { getOrCreateTgUser, publicUser } from '../../../server/users.js';
+import { json, readJson, HttpError } from '../http.js';
+import { validateInitData } from '../crypto.js';
+import { getOrCreateTgUser, publicUser } from '../users.js';
 
 // Mini App присылает initData -> проверяем подпись бота -> отдаём персональный токен.
 // Дальше Mini App ходит в API с Bearer-токеном, как обычный браузер.

@@ -3,7 +3,7 @@
 import json, uuid
 from pathlib import Path
 
-APP = "https://YOUR-APP.pages.dev"  # заменить после деплоя
+APP = "https://plannertest.marksohokornilov.workers.dev"  # заменить после деплоя
 OUT = Path(__file__).resolve().parent.parent / "n8n" / "voice-to-planner.json"
 
 SCHEMA = {

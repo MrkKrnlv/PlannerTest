@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
-    "dev:api": "wrangler pages dev dist --port 8788",
+    "dev:api": "wrangler dev --port 8788",
     "build": "vite build",
-    "preview": "npm run build && wrangler pages dev dist --port 8788",
+    "preview": "npm run build && wrangler dev --port 8788",
     "db:migrate:local": "wrangler d1 migrations apply planner --local",
     "db:migrate": "wrangler d1 migrations apply planner --remote",
-    "deploy": "npm run build && wrangler pages deploy dist",
+    "deploy": "npm run build && wrangler deploy",
     "test:api": "node scripts/smoke-test.mjs"
   },
   "dependencies": {

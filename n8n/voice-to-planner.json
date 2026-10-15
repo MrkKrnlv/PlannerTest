@@ -3,7 +3,7 @@
   "name": "Голос → Планер",
   "nodes": [
     {
-      "id": "a7083e49-0c05-4c64-a291-fd6f4f43d1f8",
+      "id": "7b245bb3-704b-45d9-8948-8fc8b2631386",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
@@ -19,7 +19,7 @@
       }
     },
     {
-      "id": "be68c0b8-9306-4d23-8454-ef9033a74b32",
+      "id": "fb2d587b-4e44-40ed-9a0d-826af5c7cd9e",
       "name": "Голосовое?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -37,7 +37,7 @@
           },
           "conditions": [
             {
-              "id": "f314642d-4641-4ee0-ac78-6d6d307f4402",
+              "id": "34059d64-ae31-4456-bc1a-0ee9bd92c49f",
               "leftValue": "={{ $json.message.voice }}",
               "operator": {
                 "type": "object",
@@ -53,7 +53,7 @@
       }
     },
     {
-      "id": "1e225968-fddf-4ec9-8f7b-3d0a4a9102ba",
+      "id": "95545181-b8d5-4b24-a021-b67f9efb3227",
       "name": "Скачать голосовое",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
@@ -68,7 +68,7 @@
       }
     },
     {
-      "id": "7a3c96b6-f690-4663-b0d5-0a64a00df122",
+      "id": "68131991-0b05-4c5d-9cd5-7e3c09d58f39",
       "name": "Расшифровать",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
@@ -85,7 +85,7 @@
       }
     },
     {
-      "id": "1c478c7d-ab36-4dfa-940a-467ce2c75d8a",
+      "id": "dd02316a-998e-4509-b8d8-63b61a700499",
       "name": "Текст",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -97,7 +97,7 @@
         "assignments": {
           "assignments": [
             {
-              "id": "c11cf3c7-a6e4-4bba-9868-db3badb37947",
+              "id": "d03b947d-b617-465b-a68f-99b6e3ec1341",
               "name": "text",
               "type": "string",
               "value": "={{ $json.text ?? $('Telegram Trigger').item.json.message.text ?? '' }}"
@@ -108,7 +108,7 @@
       }
     },
     {
-      "id": "086f61b3-aea1-45e4-ad78-05019124e3d8",
+      "id": "2179c8cb-b894-49d9-86e0-a5ccfce0b8d4",
       "name": "Задачи на неделю",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -117,7 +117,7 @@
         300
       ],
       "parameters": {
-        "url": "https://YOUR-APP.pages.dev/api/tasks",
+        "url": "https://plannertest.marksohokornilov.workers.dev/api/tasks",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
@@ -151,7 +151,7 @@
       }
     },
     {
-      "id": "2b19b0bc-5e12-495a-8b89-25fdce430df0",
+      "id": "c7f4ba39-0dbd-4ab8-8d15-f084f419ff19",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2,
@@ -169,7 +169,7 @@
       }
     },
     {
-      "id": "2fd8fe98-8183-40ce-b380-d1a85594dacf",
+      "id": "1028bc59-7273-4fc6-b6d8-6c231cee8360",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
@@ -190,7 +190,7 @@
       }
     },
     {
-      "id": "4c043045-b3f0-44de-a565-806acd5cc508",
+      "id": "b0d81435-e30b-402f-bdf0-97a0c8745596",
       "name": "Structured Output Parser",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
@@ -204,7 +204,7 @@
       }
     },
     {
-      "id": "9c7a256f-f4d5-498c-ae16-75765c44ea40",
+      "id": "be1e693d-a69f-406b-adf9-ce77d8e1ea99",
       "name": "Есть задачи?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -222,7 +222,7 @@
           },
           "conditions": [
             {
-              "id": "fd7dc9f8-af76-41d7-b2a9-3e9530f278bf",
+              "id": "92566d71-cb0a-41ad-97e8-effa53ac158c",
               "leftValue": "={{ $json.output.tasks.length }}",
               "operator": {
                 "type": "number",
@@ -237,7 +237,7 @@
       }
     },
     {
-      "id": "8e4e01d5-8d54-41b6-9d3a-743f56042e7c",
+      "id": "2589f331-67e4-4a9e-b273-0fd2e4d4befa",
       "name": "Добавить в планер",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -247,7 +247,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "https://YOUR-APP.pages.dev/api/tasks",
+        "url": "https://plannertest.marksohokornilov.workers.dev/api/tasks",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
@@ -271,7 +271,7 @@
       }
     },
     {
-      "id": "145f395a-6e78-44ee-9925-51480a4311b5",
+      "id": "6038c099-b19f-4a2c-b759-1bac632684c5",
       "name": "Ответить в Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,

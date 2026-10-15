@@ -1,6 +1,6 @@
-import { json, HttpError } from '../../server/http.js';
-import { timingSafeEqual } from '../../server/crypto.js';
-import { getOrCreateTgUser, getOrCreateDevUser } from '../../server/users.js';
+import { json, HttpError } from '../http.js';
+import { timingSafeEqual } from '../crypto.js';
+import { getOrCreateTgUser, getOrCreateDevUser } from '../users.js';
 
 const PUBLIC = new Set(['/api/health', '/api/auth/telegram']);
 

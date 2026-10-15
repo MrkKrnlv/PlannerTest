@@ -1,5 +1,5 @@
-import { json, readJson, HttpError } from '../../../server/http.js';
-import { normalizeTask, upsertStatement } from '../../../server/tasks.js';
+import { json, readJson, HttpError } from '../http.js';
+import { normalizeTask, upsertStatement } from '../tasks.js';
 
 /**
  * POST /api/tasks/sync  { changes: [task, ...] }

@@ -2,7 +2,7 @@
 
 Планер дня, который живёт в браузере, ставится на телефон как приложение, открывается как Telegram Mini App и синхронизируется между всеми устройствами. Задачи можно надиктовать боту голосом: n8n расшифрует, AI-агент разложит по дням и добавит в планер.
 
-Всё бесплатно в рамках free-тарифов Cloudflare (Pages, Functions, D1).
+Всё бесплатно в рамках free-тарифов Cloudflare (Workers со статикой и D1).
 
 ## Что умеет
 
@@ -19,7 +19,7 @@
 ```
  Браузер / PWA / Mini App                Cloudflare                       n8n
  ┌──────────────────────┐   Bearer   ┌──────────────────────┐  service key  ┌──────────────────┐
- │ React + Zustand      │──────────▶│ Pages Functions /api │◀──────────────│ Telegram Trigger │
+ │ React + Zustand      │──────────▶│ Worker /api + статика│◀──────────────│ Telegram Trigger │
  │ localStorage (копия) │◀──────────│ D1 (SQLite)          │               │ Whisper → Agent  │
  └──────────────────────┘  дельта    └──────────────────────┘               └──────────────────┘
 ```
@@ -27,7 +27,7 @@
 | Слой | Что |
 |---|---|
 | Фронт | React 19, Zustand 5 (persist в localStorage), Vite 8, чистый CSS, шрифты Onest и Unbounded (self-hosted) |
-| API | Cloudflare Pages Functions, папка `functions/api` |
+| API | Cloudflare Worker: `server/worker.js` отдаёт `/api/*`, остальное — статика из `dist/` |
 | База | Cloudflare D1, задачи построчно |
 | Офлайн | `public/sw.js`, `public/manifest.webmanifest` |
 
@@ -68,7 +68,7 @@ npm install
 cp .dev.vars.example .dev.vars
 npm run db:migrate:local
 npm run build
-npm run dev:api      # API и собранный фронт на http://localhost:8788
+npm run dev:api      # Worker: API и собранный фронт на http://localhost:8788
 npm run dev          # во втором терминале: фронт с автообновлением на http://localhost:5173
 ```
 
@@ -76,22 +76,28 @@ npm run dev          # во втором терминале: фронт с ав�
 
 ## Деплой
 
+Через дашборд Cloudflare:
+
+1. **База.** Storage & databases → D1 → Create, имя `planner`. Её id вписать в `wrangler.toml` → `database_id`. В консоли базы выполнить `migrations/0001_init.sql`.
+2. **Worker.** Workers & Pages → Create → Import a repository → этот репо. Build command `npm run build`, Deploy command `npx wrangler deploy`. Имя Worker должно совпадать с `name` в `wrangler.toml`.
+3. **Секреты.** Settings → Variables and Secrets → Add, тип **Secret**: `BOT_TOKEN`, `SERVICE_KEY`. Именно Secret: обычные переменные, которых нет в `wrangler.toml`, стираются при следующем деплое из Git.
+4. Каждый пуш в `main` деплоится сам.
+
+Или из консоли:
+
 ```bash
 npx wrangler login
-npx wrangler d1 create planner          # id вставить в wrangler.toml -> database_id
-npm run db:migrate                      # миграции в облачную D1
-npx wrangler pages project create planner --production-branch main
-npx wrangler pages secret put BOT_TOKEN       # токен бота от @BotFather
-npx wrangler pages secret put SERVICE_KEY     # любая длинная строка: openssl rand -hex 32
+npx wrangler d1 create planner          # id -> wrangler.toml
+npm run db:migrate
+npx wrangler secret put BOT_TOKEN
+npx wrangler secret put SERVICE_KEY     # openssl rand -hex 32
 npm run deploy
 ```
-
-Адрес будет вида `https://planner-xxx.pages.dev`. Секреты применяются к следующему деплою, поэтому если добавлял их после — задеплой ещё раз.
 
 ## Бот и Mini App
 
 1. `@BotFather` → `/newbot` → получишь токен (его же в `BOT_TOKEN`).
-2. `/mybots` → бот → Bot Settings → Menu Button → URL приложения, текст «Планер».
+2. `/mybots` → бот → Bot Settings → Mini Apps → Menu Button → URL приложения с `https://`, текст «Планер».
 3. Открой бота, нажми «Планер». Вход произойдёт сам.
 4. В Mini App: «Настройки», «Ключ для браузера» → скопируй и вставь на компьютере.
 
@@ -107,7 +113,7 @@ Telegram Trigger → голосовое? ─да─→ скачать → Whispe
 После импорта:
 
 1. **Credentials.** Telegram API (тот же токен бота), OpenAI, Header Auth с именем `Planner service key`: Name `x-service-key`, Value — твой `SERVICE_KEY`.
-2. В узлах «Задачи на неделю» и «Добавить в планер» замени `https://YOUR-APP.pages.dev` на свой адрес.
+2. В узлах «Задачи на неделю» и «Добавить в планер» замени `https://plannertest.marksohokornilov.workers.dev (уже подставлен)` на свой адрес.
 3. Модель в «OpenAI Chat Model» поставь по вкусу. Часовой пояс в выражениях — `Europe/Moscow`.
 4. Активируй воркфлоу. Telegram Trigger требует, чтобы n8n был доступен по HTTPS.
 
@@ -120,13 +126,14 @@ Telegram Trigger → голосовое? ─да─→ скачать → Whispe
 - LWW работает по задаче целиком: если одну задачу одновременно правят на двух устройствах, победит более поздняя правка.
 - Надгробия удалённых задач не чистятся. Для личного планера это килобайты.
 - Ключ браузера бессрочный, ротации пока нет.
-- Из РФ `*.pages.dev` у части провайдеров открывается медленно или нестабильно. Проверь до публикации видео; при проблемах привяжи свой домен или вынеси фронт на другой хостинг.
+- Из РФ `*.workers.dev` у части провайдеров открывается медленно или нестабильно. Проверь до публикации видео; при проблемах привяжи свой домен или вынеси фронт на другой хостинг.
 
 ## Структура
 
 ```
-functions/api/        роуты Pages Functions (_middleware.js — авторизация)
-server/               общий серверный код: валидация задач, upsert, crypto, users
+server/worker.js      точка входа Worker, роутинг /api
+server/routes/        обработчики API (middleware.js — авторизация)
+server/               валидация задач, upsert, crypto, users
 migrations/           схема D1
 src/store.js          состояние и действия
 src/lib/sync.js       синк-движок

@@ -1,5 +1,5 @@
-import { json, readJson, HttpError } from '../../../server/http.js';
-import { normalizeTask, upsertStatement, toClient } from '../../../server/tasks.js';
+import { json, readJson, HttpError } from '../http.js';
+import { normalizeTask, upsertStatement, toClient } from '../tasks.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PAGE = 500;
