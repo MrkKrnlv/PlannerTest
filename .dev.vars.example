@@ -1,0 +1,7 @@
+# Скопируй в .dev.vars для локального запуска (файл в .gitignore)
+# Ключ для входа в браузере локально: вводишь "dev" на экране входа
+DEV_TOKEN=dev
+# Ключ, с которым n8n ходит в API от имени пользователя Telegram
+SERVICE_KEY=svc-test-key
+# Токен бота от @BotFather (локально можно любой — нужен для проверки initData в тестах)
+BOT_TOKEN=123456:TEST-bot-token

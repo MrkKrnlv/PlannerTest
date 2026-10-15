@@ -1,0 +1,16 @@
+{
+  "name": "Планер",
+  "short_name": "Планер",
+  "description": "Планер дня с синхронизацией между телефоном и компьютером",
+  "lang": "ru",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f1f3f6",
+  "theme_color": "#f1f3f6",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
