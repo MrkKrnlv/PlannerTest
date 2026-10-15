@@ -1,8 +1,9 @@
 {
+  "id": "voiceToPlanner01",
   "name": "Голос → Планер",
   "nodes": [
     {
-      "id": "1ebc5929-73c2-40fb-bc44-0da958a4db75",
+      "id": "a7083e49-0c05-4c64-a291-fd6f4f43d1f8",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
@@ -18,7 +19,7 @@
       }
     },
     {
-      "id": "d93d8fc1-b751-4ceb-abea-247cf7dafe40",
+      "id": "be68c0b8-9306-4d23-8454-ef9033a74b32",
       "name": "Голосовое?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -36,7 +37,7 @@
           },
           "conditions": [
             {
-              "id": "e038737c-5166-4036-8f0c-c905ff7ad76f",
+              "id": "f314642d-4641-4ee0-ac78-6d6d307f4402",
               "leftValue": "={{ $json.message.voice }}",
               "operator": {
                 "type": "object",
@@ -52,7 +53,7 @@
       }
     },
     {
-      "id": "9912f46a-a0b1-4f97-919e-b6a2db8ec2e1",
+      "id": "1e225968-fddf-4ec9-8f7b-3d0a4a9102ba",
       "name": "Скачать голосовое",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
@@ -67,7 +68,7 @@
       }
     },
     {
-      "id": "4da4698b-fa7f-4f0f-bd33-d00c7450430f",
+      "id": "7a3c96b6-f690-4663-b0d5-0a64a00df122",
       "name": "Расшифровать",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
@@ -84,7 +85,7 @@
       }
     },
     {
-      "id": "1d4a8501-03c5-42f4-80c7-43c4466f2e9c",
+      "id": "1c478c7d-ab36-4dfa-940a-467ce2c75d8a",
       "name": "Текст",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -96,7 +97,7 @@
         "assignments": {
           "assignments": [
             {
-              "id": "9a225e8d-f654-439d-bf93-e43b5ae9d057",
+              "id": "c11cf3c7-a6e4-4bba-9868-db3badb37947",
               "name": "text",
               "type": "string",
               "value": "={{ $json.text ?? $('Telegram Trigger').item.json.message.text ?? '' }}"
@@ -107,7 +108,7 @@
       }
     },
     {
-      "id": "8a87820d-7955-44a0-953c-ed2b318c129f",
+      "id": "086f61b3-aea1-45e4-ad78-05019124e3d8",
       "name": "Задачи на неделю",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -145,13 +146,12 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "",
           "name": "Planner service key"
         }
       }
     },
     {
-      "id": "5bc39b1f-6c3e-4120-a019-08e014935c29",
+      "id": "2b19b0bc-5e12-495a-8b89-25fdce430df0",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2,
@@ -169,7 +169,7 @@
       }
     },
     {
-      "id": "1896fdff-2d61-49fb-858d-fc3a4e3b20e7",
+      "id": "2fd8fe98-8183-40ce-b380-d1a85594dacf",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
@@ -190,7 +190,7 @@
       }
     },
     {
-      "id": "53bcb0b0-410b-4c39-9bd4-9be9782c2832",
+      "id": "4c043045-b3f0-44de-a565-806acd5cc508",
       "name": "Structured Output Parser",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
@@ -204,7 +204,7 @@
       }
     },
     {
-      "id": "d77e5d8f-0d90-4dcf-8bac-7e7637f427bd",
+      "id": "9c7a256f-f4d5-498c-ae16-75765c44ea40",
       "name": "Есть задачи?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -222,7 +222,7 @@
           },
           "conditions": [
             {
-              "id": "1ff34e05-55fa-49d8-9790-bf7dd0c7733d",
+              "id": "fd7dc9f8-af76-41d7-b2a9-3e9530f278bf",
               "leftValue": "={{ $json.output.tasks.length }}",
               "operator": {
                 "type": "number",
@@ -237,7 +237,7 @@
       }
     },
     {
-      "id": "156607f0-f625-483e-bae0-d5bb2f337c73",
+      "id": "8e4e01d5-8d54-41b6-9d3a-743f56042e7c",
       "name": "Добавить в планер",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -266,13 +266,12 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "",
           "name": "Planner service key"
         }
       }
     },
     {
-      "id": "f0f152ae-45f1-47a3-a921-1b63c261247f",
+      "id": "145f395a-6e78-44ee-9925-51480a4311b5",
       "name": "Ответить в Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,

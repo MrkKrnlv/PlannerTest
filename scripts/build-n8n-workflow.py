@@ -147,7 +147,7 @@ nodes = [
 
 for n in nodes:
     if n["name"] in ("Задачи на неделю", "Добавить в планер"):
-        n["credentials"] = {"httpHeaderAuth": {"id": "", "name": "Planner service key"}}
+        n["credentials"] = {"httpHeaderAuth": {"name": "Planner service key"}}
 
 main = lambda *targets: {"main": [[{"node": t, "type": "main", "index": 0} for t in branch] for branch in targets]}
 connections = {
@@ -165,6 +165,7 @@ connections = {
 }
 
 workflow = {
+    "id": "voiceToPlanner01",
     "name": "Голос → Планер",
     "nodes": nodes,
     "connections": connections,
